@@ -1,7 +1,7 @@
 {
   "name": "django-node-server",
   "version": "0.0.1",
-  "description": "",
+  "description": "django-node server",
   "main": "index.js",
   "repository": {
     "type": "git",
