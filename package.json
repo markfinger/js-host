@@ -1,0 +1,20 @@
+{
+  "name": "django-node-server",
+  "version": "0.0.1",
+  "description": "",
+  "main": "index.js",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/markfinger/django-node-server.git"
+  },
+  "author": "Mark Finger <markfinger@gmail.com>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/markfinger/django-node-server/issues"
+  },
+  "homepage": "https://github.com/markfinger/django-node-server",
+  "dependencies": {
+    "express": "^4.11.2",
+    "yargs": "^2.1.1"
+  }
+}
