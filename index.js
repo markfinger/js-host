@@ -1,4 +1,3 @@
-var http = require('http');
 var fs = require('fs');
 var argv = require('yargs').argv;
 var express = require('express');
@@ -44,11 +43,20 @@ app.get('/', function(req, res) {
 	res.send('<h1>Endpoints</h1><ul>' + endpoints.join('') + '</ul>');
 });
 
-services.forEach(function(service) {
+var serviceWrapperFactory = function serviceWrapperFactory(name, service) {
+	return function serviceWrapper(request, response) {
+		console.info('[' + (new Date()).toISOString() + '] ' + request.url);
+		return service(request, response);
+	};
+};
+
+services.forEach(function(obj) {
 	try {
-		app.get(service.name, require(service.path_to_source));
+		var name = obj.name;
+		var service = require(obj.path_to_source);
+		app.get(name, serviceWrapperFactory(name, service));
 	} catch(e) {
-		throw new Error('Failed to add service "' + JSON.stringify(service) + '". ' + e.message);
+		throw new Error('Failed to add service "' + JSON.stringify(obj) + '". ' + e.message);
 	}
 });
 
