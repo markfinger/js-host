@@ -1,6 +1,7 @@
 var fs = require('fs');
 var argv = require('yargs').argv;
 var express = require('express');
+var bodyParser = require('body-parser');
 
 var configFile = argv.c || argv.config;
 
@@ -30,6 +31,11 @@ if (!services) {
 
 var app = express();
 
+// parse application/json
+app.use(bodyParser.json({
+	limit: '50mb'
+}));
+
 var server = app.listen(port, address, function() {
 	console.log(startupOutput);
 });
@@ -54,7 +60,7 @@ services.forEach(function(obj) {
 	try {
 		var name = obj.name;
 		var service = require(obj.path_to_source);
-		app.get(name, serviceWrapperFactory(name, service));
+		app.post(name, serviceWrapperFactory(name, service));
 	} catch(e) {
 		throw new Error('Failed to add service "' + JSON.stringify(obj) + '". ' + e.message);
 	}
