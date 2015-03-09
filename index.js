@@ -67,7 +67,7 @@ var createCacheEntry = function(key) {
 };
 
 var serviceWrapperFactory = function serviceWrapperFactory(name, service) {
-	var cache = {};
+	var cache = Object.create(null);
 
 	var sendPendingResponses = function(cacheEntry) {
 		var pendingResponses = cacheEntry.pendingResponses;
