@@ -117,10 +117,10 @@ var serviceWrapperFactory = function serviceWrapperFactory(name, service) {
 
 			var _send = response.send;
 			response.send = function(body) {
-				cacheEntry.pendingCompletion = false;
 				response.send = _send;
-				cache[key].body = body;
-				cache[key].statusCode = response.statusCode;
+				cacheEntry.pendingCompletion = false;
+				cacheEntry.body = body;
+				cacheEntry.statusCode = response.statusCode;
 				sendPendingResponses(cacheEntry);
 			};
 		}
