@@ -31,8 +31,9 @@ if (!services) {
 
 var app = express();
 
-// parse application/json
-app.use(bodyParser.json({
+// parse application/x-www-form-urlencoded
+app.use(bodyParser.urlencoded({
+	extended: false,
 	limit: '50mb'
 }));
 
@@ -49,10 +50,103 @@ app.get('/', function(req, res) {
 	res.send('<h1>Endpoints</h1><ul>' + endpoints.join('') + '</ul>');
 });
 
+var log = function(message) {
+	console.log('[' + (new Date()).toISOString() + '] ' + message);
+};
+
+var createCacheEntry = function(key) {
+	return {
+		key: key,
+		body: null,
+		statusCode: null,
+		pendingResponses: [],
+		blockFurtherRequests: false,
+		pendingCompletion: true,
+		pendingCompletionTimer: null
+	};
+};
+
 var serviceWrapperFactory = function serviceWrapperFactory(name, service) {
+	var cache = {};
+
+	var sendPendingResponses = function(cacheEntry) {
+		var pendingResponses = cacheEntry.pendingResponses;
+		cacheEntry.pendingResponses = [];
+		pendingResponses.forEach(function(response) {
+			response
+				.status(cacheEntry.statusCode)
+				.send(cacheEntry.body);
+		});
+		if (cacheEntry.statusCode !== 200) {
+			cache[cacheEntry.key] = createCacheEntry(cacheEntry.key)
+		}
+	};
+
 	return function serviceWrapper(request, response) {
-		console.info('[' + (new Date()).toISOString() + '] ' + request.url);
-		return service(request, response);
+		log('service: ' + request.url);
+
+		var key = request.body.cache_key;
+
+		var cacheEntry;
+		if (key) {
+			if (!cache[key]) {
+				cache[key] = createCacheEntry(key);
+			}
+			cacheEntry = cache[key];
+
+			cacheEntry.pendingResponses.push(response);
+
+			if (cacheEntry.body) {
+				sendPendingResponses(cacheEntry);
+				return;
+			}
+
+			if (cacheEntry.pendingResponses.length > 1) {
+				return;
+			}
+
+			// Catch service timeouts
+			setTimeout(function() {
+				if (!cacheEntry.body && cache[key] !== cacheEntry) {
+					cacheEntry.statusCode = 500;
+					cacheEntry.body = 'Service timed out: ' + name;
+					sendPendingResponses(cacheEntry);
+				}
+			// TODO: read this number in from the config
+			}, 1000 * 10);
+
+			var _send = response.send;
+			response.send = function(body) {
+				cacheEntry.pendingCompletion = false;
+				response.send = _send;
+				cache[key].body = body;
+				cache[key].statusCode = response.statusCode;
+				sendPendingResponses(cacheEntry);
+			};
+		}
+
+		var data;
+		if (request.body.data) {
+			try {
+				data = JSON.parse(request.body.data);
+			} catch(err) {
+				console.error(err);
+				if (cacheEntry) {
+					cacheEntry.statusCode = 500;
+					cacheEntry.body = err;
+					sendPendingResponses();
+				} else {
+					response.status(500).send(err);
+				}
+				return;
+			}
+		}
+
+		if (key) {
+			log('cache miss: ' + key + '. Calling service ' + name);
+		}
+
+		service(data, response);
 	};
 };
 
