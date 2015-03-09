@@ -83,9 +83,9 @@ var serviceWrapperFactory = function serviceWrapperFactory(name, service) {
 	};
 
 	return function serviceWrapper(request, response) {
-		log('service: ' + request.url);
-
 		var key = request.body.cache_key;
+
+		log('request for service: ' + request.url + '.' + (key ? ' Cache key: ' + key : ''));
 
 		var cacheEntry;
 		if (key) {
@@ -97,6 +97,7 @@ var serviceWrapperFactory = function serviceWrapperFactory(name, service) {
 			cacheEntry.pendingResponses.push(response);
 
 			if (cacheEntry.body) {
+				log('cache hit: ' + key + '. Service: ' + name);
 				sendPendingResponses(cacheEntry);
 				return;
 			}
@@ -122,6 +123,9 @@ var serviceWrapperFactory = function serviceWrapperFactory(name, service) {
 				cacheEntry.body = body;
 				cacheEntry.statusCode = response.statusCode;
 				sendPendingResponses(cacheEntry);
+				if (cacheEntry.statusCode === 200) {
+					log('cache populated: ' + key + '. Service: ' + name);
+				}
 			};
 		}
 
