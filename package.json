@@ -14,8 +14,18 @@
   },
   "homepage": "https://github.com/markfinger/django-node-server",
   "dependencies": {
-    "express": "^4.11.2",
     "body-parser": "^1.12.0",
-    "yargs": "^2.1.1"
+    "express": "^4.11.2",
+    "lodash": "^3.5.0",
+    "yargs": "^3.5.4"
+  },
+  "devDependencies": {
+    "chai": "^2.1.1",
+    "mocha": "^2.2.1",
+    "request": "^2.53.0"
+  },
+  "scripts": {
+    "test": "mocha",
+    "test-debug": "mocha debug"
   }
 }
