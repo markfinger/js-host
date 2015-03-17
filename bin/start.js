@@ -1,6 +1,6 @@
 var fs = require('fs');
 var argv = require('yargs').argv;
-var Host = require('../');
+var Manager = require('../');
 
 var pathToConfig = argv.c || argv.config;
 if (!pathToConfig) {
@@ -12,5 +12,5 @@ fs.readFile(pathToConfig, function(err, json) {
 		throw new Error(err);
 	}
 	var config = JSON.parse(json);
-	new Host(config).start();
+	//var manager = new Manager(config).start();
 });

@@ -1,101 +1,174 @@
-var path = require('path');
 var Service = require('../lib/Service');
 var assert = require('chai').assert;
 
-var pathToEcho = path.join(__dirname, 'test_services', 'echo');
-var pathToUndefined = path.join(__dirname, 'test_services', 'undefined');
-var pathToEchoAsync = path.join(__dirname, 'test_services', 'echo_async');
-
 describe('Service', function() {
-	describe('constructor', function() {
-		it('should be a function', function() {
-			assert.isFunction(Service);
-		});
-	});
-    describe('config', function() {
-        it('the constructor should accept a config object and initialise properly', function() {
-            var config = {
-                name: 'echo',
-                pathToSource: pathToEcho
-            };
-            var service = new Service(config);
-            assert.deepEqual(service.config, config);
-            assert.equal(service.name, 'echo');
-            assert.strictEqual(service.handler, require('./test_services/echo'));
-        });
+  describe('constructor', function() {
+    it('should be a function', function() {
+      assert.isFunction(Service);
     });
-    describe('name', function() {
-        it('should be validated', function() {
-            new Service({
-                name: 'test', pathToSource: pathToEcho
-            });
-            assert.throws(
-                function() { new Service({pathToSource: pathToEcho}); },
-                '"undefined" is not a valid service name'
-            );
-            assert.throws(
-                function() { new Service({name: undefined, pathToSource: pathToEcho}); },
-                '"undefined" is not a valid service name'
-            );
-            assert.throws(
-                function() { new Service({name: null, pathToSource: pathToEcho}); },
-                '"null" is not a valid service name'
-            );
-            assert.throws(
-                function() { new Service({name: false, pathToSource: pathToEcho}); },
-                '"false" is not a valid service name'
-            );
-            assert.throws(
-                function() { new Service({name: '', pathToSource: pathToEcho}); },
-                '"" is not a valid service name'
-            );
-        });
+    it('should accept an object and initialise properly', function() {
+      var obj = {
+        name: 'echo',
+        handler: function() {
+        }
+      };
+      var service = new Service(obj);
+      assert.equal(service.name, 'echo');
+      assert.strictEqual(service.handler, obj.handler);
     });
-	describe('handler', function() {
-        it('should be validated', function() {
-            assert.throws(
-                function() { new Service({name: 'test', pathToSource: pathToUndefined}); },
-                '"' + pathToUndefined + '" does not export a function'
-            );
-        });
-		it('should accept done and data arguments', function() {
-			var service = new Service({
-                name: 'test',
-				pathToSource: pathToEcho
-			});
+  });
+  describe('#name', function() {
+    it('should be validated', function() {
+      new Service({
+        name: 'test', handler: function() {
+        }
+      });
+      assert.throws(
+        function() {
+          new Service({});
+        },
+        '"undefined" is not a valid service name'
+      );
+      assert.throws(
+        function() {
+          new Service({name: undefined});
+        },
+        '"undefined" is not a valid service name'
+      );
+      assert.throws(
+        function() {
+          new Service({name: null});
+        },
+        '"null" is not a valid service name'
+      );
+      assert.throws(
+        function() {
+          new Service({name: false});
+        },
+        '"false" is not a valid service name'
+      );
+      assert.throws(
+        function() {
+          new Service({name: ''});
+        },
+        '"" is not a valid service name'
+      );
+    });
+  });
+  describe('#handler', function() {
+    it('should be validated', function() {
+      new Service({
+        name: 'test', handler: function() {
+        }
+      });
+      assert.throws(
+        function() {
+          new Service({name: 'test'});
+        },
+        'Service handlers must be a function'
+      );
+      assert.throws(
+        function() {
+          new Service({name: 'test', handler: {}});
+        },
+        'Service handlers must be a function'
+      );
+    });
+  });
+  describe('#call()', function() {
+    it('the output of services can be cached', function(done) {
+      var service = new Service({
+        name: 'test',
+        handler: function(data, done) {
+          setTimeout(function() {
+            done(null, data.count);
+          }, 10);
+        }
+      });
 
-			service.handler(function(err, output) {
-				assert.equal(err, '`echo` data not provided');
-				assert.isUndefined(output);
-			}, {});
+      assert.equal(service.cache.get('test-key'), null);
 
-			service.handler(function(err, output) {
-				assert.isNull(err);
-				assert.equal(output, 'test');
-			}, {echo: 'test'});
-		});
-        it('done can be evaluated asynchronously', function(done) {
-            var service = new Service({
-                name: 'test',
-                pathToSource: pathToEchoAsync
+      service.call({count: 1}, 'test-key', function(err, output) {
+        assert.isNull(err);
+        assert.equal(output, 1);
+        assert.equal(service.cache.get('test-key'), 1);
+
+        service.call({count: 2}, 'test-key', function(err, output) {
+          assert.isNull(err);
+          assert.equal(output, 1);
+
+          service.cache.set('test-key', 3);
+
+          service.call({count: 4}, 'test-key', function(err, output) {
+            assert.isNull(err);
+            assert.equal(output, 3);
+
+            service.call({count: 4}, 'another-test-key', function(err, output) {
+              assert.isNull(err);
+              assert.equal(output, 4);
+              done();
             });
-
-            var error = false;
-            var success = false;
-
-            service.handler(function(err, output) {
-                assert.equal(err, '`echo` data not provided');
-                assert.isUndefined(output);
-                error = true;
-                success && done();
-            }, {});
-
-            service.handler(function(err, output) {
-                assert.isNull(err);
-                assert.equal(output, 'test');
-                success = true;
-                error && done();
-            }, {echo: 'test'});
+          });
         });
-	});
+      });
+    });
+    it('if a cache key is defined, successive calls to a service will block until the first completes', function(done) {
+      var service = new Service({
+        name: 'test',
+        handler: function(data, done) {
+          setTimeout(function() {
+            done(null, data.count);
+          }, 25);
+        }
+      });
+
+      assert.equal(service.cache.get('test-key'), null);
+      assert.isUndefined(service.pending['test-key']);
+
+      service.call({count: 1}, 'test-key', function(err, output) {
+        assert.equal(service.pending['test-key'].length, 0);
+
+        assert.isNull(err);
+        assert.equal(output, 1);
+        assert.equal(service.cache.get('test-key'), 1);
+      });
+      assert.equal(service.pending['test-key'].length, 1);
+
+      service.call({count: 2}, 'test-key', function(err, output) {
+        assert.equal(service.pending['test-key'].length, 0);
+
+        assert.isNull(err);
+        assert.equal(output, 1);
+      });
+      assert.equal(service.pending['test-key'].length, 2);
+
+      service.call({count: 3}, 'test-key', function(err, output) {
+        assert.equal(service.pending['test-key'].length, 0);
+        assert.isNull(err);
+        assert.equal(output, 1);
+        service.call({count: 4}, 'test-key', function(err, output) {
+          assert.equal(service.pending['test-key'].length, 0);
+          assert.isNull(err);
+          assert.equal(output, 1);
+
+          service.cache.clear();
+          service.call({count: 5}, 'test-key', function(err, output) {
+            assert.isNull(err);
+            assert.equal(output, 5);
+            done();
+          });
+        });
+        assert.equal(service.pending['test-key'].length, 1);
+      });
+      assert.equal(service.pending['test-key'].length, 3);
+
+      assert.isUndefined(service.pending['test-key-2']);
+      service.call({count: 6}, 'test-key-2', function(err, output) {
+        assert.equal(service.pending['test-key-2'].length, 0);
+        assert.isNull(err);
+        assert.equal(output, 6);
+      });
+      assert.equal(service.pending['test-key-2'].length, 1);
+    });
+  });
 });

@@ -1,1 +1,1 @@
-module.exports = require('./lib/Host');
+module.exports = require('./lib/Manager');
