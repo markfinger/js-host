@@ -227,12 +227,12 @@ describe('Manager', function() {
       });
 
       manager.listen(function() {
-        request.post({url: 'http://127.0.0.1:63578/echo', form: { echo: 'echo-test' }}, function(err, res, body) {
+        request.post({url: 'http://127.0.0.1:63578/echo', json: true, body: { echo: 'echo-test' }}, function(err, res, body) {
           assert.equal(body, 'echo-test');
           request.post('http://127.0.0.1:63578/echo', function(err, res, body) {
             assert.equal(res.statusCode, 500);
             assert.include(body, '`echo` data not provided');
-            request.post({url: 'http://127.0.0.1:63578/echo-async', form: { echo: 'echo-async-test' }}, function(err, res, body) {
+            request.post({url: 'http://127.0.0.1:63578/echo-async', json: true, body: { echo: 'echo-async-test' }}, function(err, res, body) {
               assert.equal(body, 'echo-async-test');
               request.post('http://127.0.0.1:63578/echo-async', function(err, res, body) {
                 assert.equal(res.statusCode, 500);
@@ -265,7 +265,7 @@ describe('Manager', function() {
       });
 
       manager.listen(function() {
-        request.post({url: 'http://127.0.0.1:63578/text-test', form: { text: text }}, function(err, res, body) {
+        request.post({url: 'http://127.0.0.1:63578/text-test', json: true, body: { text: text }}, function(err, res, body) {
           assert.equal(body, 'success: ' + text);
           manager.stopListening();
           done();
