@@ -338,5 +338,70 @@ describe('Manager', function() {
         });
       });
     });
+    it('a service\'s output can be cached via a `x-cache-key` header', function(done) {
+      var manager = new Manager({
+        outputOnListen: false
+      });
+
+      var cachedCount = 0;
+      manager.addService({
+        name: 'cached-count',
+        handler: function(data, done) {
+          cachedCount++;
+          done(null, ''+cachedCount);
+        }
+      });
+
+      var count = 0;
+      manager.addService({
+        name: 'count',
+        handler: function(data, done) {
+          count++;
+          done(null, ''+count);
+        }
+      });
+
+      var cachedCountOptions1 = {
+        url: 'http://127.0.0.1:63578/cached-count',
+        headers: {
+          'x-cache-key': 'test-key-1'
+        }
+      };
+
+      var cachedCountOptions2 = {
+        url: 'http://127.0.0.1:63578/cached-count',
+        headers: {
+          'x-cache-key': 'test-key-2'
+        }
+      };
+
+      manager.listen(function() {
+        request.post(cachedCountOptions1, function(err, res, body) {
+          assert.equal(body, '1');
+          request.post(cachedCountOptions1, function(err, res, body) {
+            assert.equal(body, '1');
+            request.post('http://127.0.0.1:63578/count', function(err, res, body) {
+              assert.equal(body, '1');
+              request.post('http://127.0.0.1:63578/count', function(err, res, body) {
+                assert.equal(body, '2');
+                request.post('http://127.0.0.1:63578/count', function(err, res, body) {
+                  assert.equal(body, '3');
+                  request.post(cachedCountOptions2, function(err, res, body) {
+                    assert.include(body, '2');
+                    request.post(cachedCountOptions1, function(err, res, body) {
+                      assert.include(body, '1');
+                      request.post(cachedCountOptions2, function(err, res, body) {
+                        assert.include(body, '2');
+                        done();
+                      });
+                    });
+                  });
+                });
+              });
+            });
+          });
+        });
+      });
+    });
   });
 });
