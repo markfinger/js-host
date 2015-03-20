@@ -1,16 +1,22 @@
 var fs = require('fs');
 var argv = require('yargs').argv;
-var Manager = require('../');
+var Host = require('../lib/Host');
 
-var pathToConfig = argv.c || argv.config;
-if (!pathToConfig) {
-	throw new Error('No config file specified. Use -c or --config to specify a path to a config file');
+var readConfigFile = function readConfigFile(pathToFile, cb) {
+  fs.readFile(pathToFile, function(err, json) {
+    if (err) {
+      throw new Error(err);
+    }
+    var config = JSON.parse(json);
+    cb(config);
+  });
+};
+
+var pathToFile = argv.c || argv.config;
+if (!pathToFile) {
+  throw new Error('No config file specified. Use -c or --config to specify a path to a json file');
 }
 
-fs.readFile(pathToConfig, function(err, json) {
-	if (err) {
-		throw new Error(err);
-	}
-	var config = JSON.parse(json);
-	//var manager = new Manager(config).start();
+readConfigFile(pathToFile, function(config) {
+  new Host(config).listen();
 });
