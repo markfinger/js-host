@@ -144,7 +144,7 @@ describe('Host', function() {
       });
     });
   });
-  describe('#debugGetHandler()', function() {
+  describe('#getDebugGetHandler()', function() {
     it('is not served by default', function(done) {
       var host = new Host({
         outputOnListen: false
@@ -382,7 +382,7 @@ describe('Host', function() {
         name: 'cached-count',
         handler: function(data, done) {
           cachedCount++;
-          done(null, '' + cachedCount);
+          done(null, cachedCount);
         }
       });
 
@@ -391,7 +391,7 @@ describe('Host', function() {
         name: 'count',
         handler: function(data, done) {
           count++;
-          done(null, '' + count);
+          done(null, count);
         }
       });
 
@@ -463,12 +463,47 @@ describe('Host', function() {
           request.post({url: 'http://127.0.0.1:63578', headers: {'X-SERVICE': 'test', 'X-AUTH-TOKEN': 'wrong-token'}}, function(err, res, body) {
             assert.equal(res.statusCode, 401);
             assert.equal(body, 'Unauthorized');
-            request.post({url: 'http://127.0.0.1:63578/test', headers: {'X-SERVICE': 'test', 'X-AUTH-TOKEN': 'test-token'}}, function(err, res, body) {
+            request.post({url: 'http://127.0.0.1:63578', headers: {'X-SERVICE': 'test', 'X-AUTH-TOKEN': 'test-token'}}, function(err, res, body) {
               assert.equal(res.statusCode, 200);
               assert.equal(body, 'success');
               host.stopListening();
               done();
             });
+          });
+        });
+      });
+    });
+  });
+  describe('#serviceCacheTimeout', function() {
+    it('can be used to set the default cache timeout of all services', function(done) {
+      var host = new Host({
+        outputOnListen: false,
+        serviceCacheTimeout: 20
+      });
+
+      var count = 0;
+      host.addService({
+        name: 'test',
+        handler: function(data, done) {
+          count++;
+          done(null, count);
+        }
+      });
+
+      var requestOptions = {url: 'http://127.0.0.1:63578', headers: {'X-SERVICE': 'test', 'X-CACHE-KEY': 'test-key'}};
+
+      host.listen(function() {
+        request.post(requestOptions, function(err, res, body) {
+          assert.equal(body, '1');
+          request.post(requestOptions, function(err, res, body) {
+            assert.equal(body, '1');
+            setTimeout(function() {
+              request.post(requestOptions, function(err, res, body) {
+                assert.equal(body, '2');
+                host.stopListening();
+                done();
+              });
+            }, 20);
           });
         });
       });
