@@ -168,7 +168,10 @@ describe('Host', function() {
       });
       host.listen(function() {
         request('http://127.0.0.1:63578', function(err, res, body) {
-          assert.equal(body, '<html><body><h1>Services</h1><ul><li>test</li></ul></body></html>');
+          assert.equal(
+            body,
+            '<html><body><h1>Config</h1><p>' + JSON.stringify(host.config) + '</p><h1>Services</h1><ul><li>test</li></ul></body></html>'
+          );
           host.stopListening();
           done();
         });

@@ -17,13 +17,13 @@
     "body-parser": "^1.12.0",
     "express": "^4.11.2",
     "lodash": "^3.5.0",
+    "pm2": "^0.12.8",
     "yargs": "^3.5.4"
   },
   "devDependencies": {
     "chai": "^2.1.1",
     "mocha": "^2.2.1",
-    "request": "^2.53.0",
-    "tmp": "0.0.25"
+    "request": "^2.53.0"
   },
   "scripts": {
     "test": "mocha",
