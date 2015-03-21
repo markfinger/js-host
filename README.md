@@ -1,39 +1,25 @@
-django-node-server
-==================
-
-JS service host for [django-node](https://github.com/markfinger/django-node)
-
-
-Install
--------
-
-`npm install service-host`
-
-
-Usage
------
+service-host
+============
 
 ```javascript
 var Host = require('service-host');
 
 var host = new Host({
-  debug: true
+  debug: true,
+  port: 9000,
 });
 
 host.addService({
-  // ...
+  name: 'foo',
+  handler: function(data, done) {
+    // ...
+    if (someError) {
+      done(someError);
+    } else {
+      done(null, output);
+    }
+  }
 });
 
 host.listen();
-```
-
-```bash
-# Extract your server's config from a django project
-./manage.py node_server_config > path/to/config.json
-
-# Install the dependencies
-npm install
-
-# Start up the server
-node bin/start.js -c path/to/config.json
 ```
