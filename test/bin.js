@@ -75,9 +75,19 @@ describe('bin commands', function() {
         [path.join(__dirname, '..', 'bin', 'start_managed.js'), '-n', 'test-service-host', '-c', path.join(__dirname, 'test_config', 'config.js')]
       );
 
+      var stdout = '';
+
       // Wait for stdout, which should indicate that the process is starting
       start_managed_js.stdout.on('data', function(data) {
-        assert.equal(data.toString(), 'Starting managed process...\n');
+        stdout += data.toString();
+      });
+
+      start_managed_js.stderr.on('data', function(data) {
+        throw data.toString();
+      });
+
+      start_managed_js.on('close', function() {
+        assert.include(stdout, 'Starting managed process...');
         // Wait a moment for the process to start up
         setTimeout(function() {
           request.post({url: 'http://127.0.0.1:8000', headers: {'X-SERVICE': 'echo'}, json: true, body: {echo: 'echo-test'}}, function(err, res, body) {
@@ -111,10 +121,6 @@ describe('bin commands', function() {
           });
         }, 500);
       });
-
-      start_managed_js.stderr.on('data', function(data) {
-        throw data.toString();
-      });
     });
   });
   describe('#stop_managed.js', function() {
@@ -124,18 +130,38 @@ describe('bin commands', function() {
         [path.join(__dirname, '..', 'bin', 'start_managed.js'), '-n', 'test-service-host', '-c', path.join(__dirname, 'test_config', 'config.js')]
       );
 
+      var stdout = '';
+
       // Wait for stdout, which should indicate that the process has been started
       start_managed_js.stdout.on('data', function(data) {
-        assert.equal(data.toString(), 'Starting managed process...\n');
+        stdout += data.toString();
+      });
+
+      start_managed_js.stderr.on('data', function(data) {
+        throw data.toString();
+      });
+
+      start_managed_js.on('close', function() {
+        assert.include(stdout, 'Starting managed process...');
 
         var stop_managed_js = child_process.spawn(
           'node',
           [path.join(__dirname, '..', 'bin', 'stop_managed.js'), '-n', 'test-service-host']
         );
 
+        stdout = '';
+
         // Wait for stdout, which should indicate that the process has been stopped
         stop_managed_js.stdout.on('data', function(data) {
-          assert.equal(data.toString(), 'Stopping managed process...\n');
+          stdout += data.toString();
+        });
+
+        stop_managed_js.stderr.on('data', function(data) {
+          throw data.toString();
+        });
+
+        stop_managed_js.on('close', function() {
+          assert.include(stdout, 'Stopping managed process...');
 
           pm2.connect(function(err) {
             if (err) {
@@ -170,14 +196,6 @@ describe('bin commands', function() {
             });
           });
         });
-
-        stop_managed_js.stderr.on('data', function(data) {
-          throw data.toString();
-        });
-      });
-
-      start_managed_js.stderr.on('data', function(data) {
-        throw data.toString();
       });
     });
   });
