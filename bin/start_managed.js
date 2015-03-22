@@ -1,5 +1,6 @@
 var path = require('path');
 var pm2 = require('pm2');
+var _ = require('lodash');
 var utils = require('./utils');
 
 var config = utils.configArg();
@@ -11,6 +12,9 @@ pm2.connect(function(err) {
   }
   pm2.start(path.join(__dirname, 'start.js'), { name: name, scriptArgs: ['-c', config] }, function(err, proc) {
     if (err) {
+      if (_.isObject(err)) {
+        err = JSON.stringify(err);
+      }
       throw new Error(err);
     }
     console.log('Starting managed process...');
