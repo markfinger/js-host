@@ -52,6 +52,12 @@ describe('bin commands', function() {
         [path.join(__dirname, '..', 'bin', 'start.js'), '-c', path.join(__dirname, 'test_config', 'config.js')]
       );
 
+      var stderr = '';
+
+      start_js.stderr.on('data', function(data) {
+        stderr += data.toString();
+      });
+
       // Wait for stdout, which should indicate the server's running
       start_js.stdout.on('data', function(data) {
         assert.equal(data.toString(), 'Server listening at 127.0.0.1:8000\n');
@@ -61,21 +67,10 @@ describe('bin commands', function() {
           request.post({url: 'http://127.0.0.1:8000', headers: {'X-SERVICE': 'echo'}, json: true, body: {echo: 'echo-test'}}, function(err, res, body) {
             assert.equal(body, 'echo-test');
             start_js.kill();
+            assert.include(stderr, 'Error: Error service');
             done();
           });
         });
-      });
-
-      var stderr = '';
-
-      start_js.stderr.on('data', function(data) {
-        stderr += data.toString();
-      });
-
-      start_js.on('exit', function(data) {
-        if (stderr) {
-          throw new Error(stderr);
-        }
       });
     });
   });
