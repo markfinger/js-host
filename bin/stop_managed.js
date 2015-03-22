@@ -5,16 +5,9 @@ var utils = require('./utils');
 var name = utils.nameArg();
 
 pm2.connect(function(err) {
-  if (err) {
-    throw new Error(err);
-  }
+  utils.throwIfError(err);
   pm2.stop(name, function(err) {
-    if (err) {
-      if (_.isObject(err)) {
-        err = JSON.stringify(err);
-      }
-      throw new Error(err);
-    }
+    utils.throwIfError(err);
     console.log('Stopping managed process...');
     pm2.disconnect(function() {
       process.exit(0)

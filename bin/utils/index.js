@@ -18,5 +18,16 @@ module.exports = {
       throw new Error('No process name specified. Use -n or --name to specify a process name');
     }
     return name;
+  },
+  throwIfError: function(err) {
+    if (err) {
+      if (err instanceof Error) {
+        throw err;
+      }
+      if (_.isObject(err)) {
+        err = JSON.stringify(err);
+      }
+      throw new Error(err);
+    }
   }
 };
