@@ -36,7 +36,7 @@ describe('bin commands', function() {
 
       start_js.stderr.on('data', function(data) {
         start_js.kill();
-        throw data.toString();
+        throw new Error(data.toString());
       });
     });
     it('an error thrown in a service will not take down the process', function(done) {
@@ -63,7 +63,7 @@ describe('bin commands', function() {
         var err = data.toString();
         if (err.indexOf('Error: Error service') !== 0) {
           start_js.kill();
-          throw err;
+          throw new Error(err);
         }
       });
     });
