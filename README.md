@@ -1,6 +1,13 @@
 service-host
 ============
 
+[![Build Status](https://travis-ci.org/markfinger/service-host.svg?branch=master)](https://travis-ci.org/markfinger/service-host)
+
+Installation
+------------
+
+`npm install service-host`
+
 Programmatic usage
 ------------------
 
