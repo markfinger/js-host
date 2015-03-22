@@ -6,7 +6,9 @@ service-host
 Installation
 ------------
 
-`npm install service-host`
+```
+npm install service-host
+```
 
 Programmatic usage
 ------------------
