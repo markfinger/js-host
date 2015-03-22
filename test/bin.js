@@ -34,9 +34,16 @@ describe('bin commands', function() {
         });
       });
 
+      var stderr = '';
+
       start_js.stderr.on('data', function(data) {
-        start_js.kill();
-        throw new Error(data.toString());
+        stderr += data.toString();
+      });
+
+      start_js.on('exit', function(data) {
+        if (stderr) {
+          throw new Error(stderr);
+        }
       });
     });
     it('an error thrown in a service will not take down the process', function(done) {
@@ -59,11 +66,15 @@ describe('bin commands', function() {
         });
       });
 
+      var stderr = '';
+
       start_js.stderr.on('data', function(data) {
-        var err = data.toString();
-        if (err.indexOf('Error: Error service') !== 0) {
-          start_js.kill();
-          throw new Error(err);
+        stderr += data.toString();
+      });
+
+      start_js.on('exit', function(data) {
+        if (stderr) {
+          throw new Error(stderr);
         }
       });
     });
