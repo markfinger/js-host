@@ -56,6 +56,8 @@ node bin/start_managed.js --name "My service host" --config path/to/config.js
 node bin/stop_managed.js --name "My service host"
 ```
 
+Config files should export a config object.
+
 Communicating with the host
 ---------------------------
 
