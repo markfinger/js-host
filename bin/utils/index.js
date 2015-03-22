@@ -1,5 +1,6 @@
 var path = require('path');
 var argv = require('yargs').argv;
+var absolutePath = require('absolute-path'); // node 0.10.x support
 
 module.exports = {
   configArg: function() {
@@ -7,7 +8,7 @@ module.exports = {
     if (!config) {
       throw new Error('No config file specified. Use -c or --config to specify a file');
     }
-    if (!path.isAbsolute(config)) {
+    if (!absolutePath(config)) {
       config = path.join(process.cwd(), config);
     }
     return config;
