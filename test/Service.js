@@ -112,6 +112,20 @@ describe('Service', function() {
         });
       });
     });
+    it('the handler should be provided with a context', function(done) {
+      var service = new Service({
+        name: 'test',
+        handler: function() {
+          assert.notStrictEqual(this, service);
+          assert.notStrictEqual(this, global);
+          assert.isObject(this);
+          assert.equal('test', this.name);
+          assert.isFunction(this.log);
+          done();
+        }
+      });
+      service.call();
+    });
     it('if a cache key is defined, successive calls to a service will block until the first completes', function(done) {
       var service = new Service({
         name: 'test',
