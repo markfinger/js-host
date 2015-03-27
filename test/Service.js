@@ -9,8 +9,7 @@ describe('Service', function() {
     it('should accept an object and initialise properly', function() {
       var obj = {
         name: 'echo',
-        handler: function() {
-        }
+        handler: function() {}
       };
       var service = new Service(obj);
       assert.equal(service.name, 'echo');
