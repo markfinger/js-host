@@ -2,7 +2,7 @@ var path = require('path');
 
 module.exports = {
   port: 8000,
-  logErrors: false,
+  silent: true,
   services: [
     {
       name: 'echo',

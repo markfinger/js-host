@@ -3,6 +3,7 @@ html(lang="en")
     head
         title Dev service host
         link(rel="stylesheet", href="bootstrap.css")
+        link(rel="stylesheet", href="dev_service_host.css")
     body
         div.container
             h1!= 'Dev service host (' + packageJson.version + ')'
@@ -13,7 +14,7 @@ html(lang="en")
                 div.col-md-4
                     h2 Engine
                     dl
-                        dt Name
+                        dt Title
                         dd= process.title
                         dt Version
                         dd= process.version
@@ -36,8 +37,9 @@ html(lang="en")
                                 li!= service.name
                 div.col-md-4
                     h2 Host commands
-                    button.btn.btn-default.btn-block Clear cache
-                    button.btn.btn-default.btn-block Restart
+                    button.btn.btn-default.btn-block Clear caches
                     button.btn.btn-default.btn-block.js-shutdown-btn Shutdown
+                    div.js-alerts-container
         script(src="jquery.js")
+        script(src="bootstrap.js")
         script(src="dev_service_host.js")

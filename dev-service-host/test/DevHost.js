@@ -41,7 +41,8 @@ describe('DevHost', function() {
   describe('#getServiceLookupMiddleware()', function() {
     it('Failed service lookups respond with a list of available services', function(done) {
       var host = new DevHost({
-        outputOnListen: false
+        outputOnListen: false,
+        silent: true
       });
 
       host.addService({
@@ -107,7 +108,8 @@ describe('DevHost', function() {
     });
     it('can hot load new services via the network', function(done) {
       var host = new DevHost({
-        outputOnListen: false
+        outputOnListen: false,
+        silent: true
       });
 
       var services = [
@@ -155,7 +157,7 @@ describe('DevHost', function() {
         if (hasStarted) {
           return;
         }
-        assert.equal(data.toString(), 'Server listening at 127.0.0.1:63578\n');
+        assert.equal(data.toString(), 'Server listening at 127.0.0.1:63578\n\n');
         hasStarted = true;
         request.post({url: 'http://127.0.0.1:63578', headers: {'X-Service': '__shutdown'}}, function(err, res, body) {
           assert.isNull(err);

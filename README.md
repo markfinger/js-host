@@ -101,9 +101,8 @@ var host = new Host({
   // to say, do not set this to true if your host is open to 
   // external connections
   debug: false,
-  // Suppresses console output on errors passed up from services.
-  // This is intended for the test suite
-  logErrors: true,
+  // Suppresses console output from the internal loggers
+  silent: false,
   // If true, the host will write to stdout once it is listening 
   // and open to connections
   outputOnListen: true,

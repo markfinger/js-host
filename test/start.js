@@ -15,7 +15,7 @@ describe('start.js', function() {
 
     // Wait for stdout, which should indicate the server's running
     start_js.stdout.on('data', function(data) {
-      assert.equal(data.toString(), 'Server listening at 127.0.0.1:8000\n');
+      assert.equal(data.toString(), 'Server listening at 127.0.0.1:8000\n\n');
       request.post({url: 'http://127.0.0.1:8000', headers: {'X-Service': 'echo'}, json: true, body: {echo: 'echo-test'}}, function(err, res, body) {
         assert.equal(body, 'echo-test');
         request.post({url: 'http://127.0.0.1:8000', headers: {'X-Service': 'echo-async'}}, function(err, res, body) {
@@ -63,7 +63,7 @@ describe('start.js', function() {
 
     // Wait for stdout, which should indicate the server's running
     start_js.stdout.on('data', function(data) {
-      assert.equal(data.toString(), 'Server listening at 127.0.0.1:8000\n');
+      assert.equal(data.toString(), 'Server listening at 127.0.0.1:8000\n\n');
       request.post({url: 'http://127.0.0.1:8000', headers: {'X-Service': 'error'}}, function(err, res, body) {
         assert.equal(res.statusCode, 500);
         assert.include(body, 'Error: Error service');

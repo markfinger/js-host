@@ -154,7 +154,8 @@ describe('Host', function() {
   describe('#router()', function() {
     it('requests can be routed to a service', function(done) {
       var host = new Host({
-        outputOnListen: false
+        outputOnListen: false,
+        silent: true
       });
 
       host.addService({
@@ -173,6 +174,7 @@ describe('Host', function() {
       host.listen(function() {
         request.post(host.getUrl(), function(err, res, body) {
           assert.equal(res.statusCode, '404');
+          assert.equal(body, 'Not found');
           request.post({url: host.getUrl(), headers: {'X-Service': 'service1'}}, function(err, res, body) {
             assert.equal(body, 'in handler1');
             request.post({url: host.getUrl(), headers: {'X-Service': 'service2'}}, function(err, res, body) {
@@ -194,7 +196,8 @@ describe('Host', function() {
       var text = fs.readFileSync(testTextFile).toString('utf-8');
 
       var host = new Host({
-        outputOnListen: false
+        outputOnListen: false,
+        silent: true
       });
 
       host.addService({
@@ -217,7 +220,8 @@ describe('Host', function() {
     });
     it('a service\'s `done` callback can only be called once', function(done) {
       var host = new Host({
-        outputOnListen: false
+        outputOnListen: false,
+        silent: true
       });
 
       host.addService({
@@ -242,26 +246,6 @@ describe('Host', function() {
         }
       });
 
-      var errorsTriggered = 0;
-      var postReceived = false;
-
-      var triggerDone = function() {
-        host.stopListening();
-        done();
-      };
-
-      host.onError = function(err) {
-        errorsTriggered++;
-        assert.include([
-          'x2',
-          'x3',
-          '`done` callback was called more than once'
-        ], err instanceof Error ? err.message : err);
-        if (errorsTriggered === 4 && postReceived) {
-          triggerDone();
-        }
-      };
-
       host.listen(function() {
         request.post({url: host.getUrl(), headers: {'X-Service': 'done-x1'}}, function(err, res, body) {
           assert.equal(res.statusCode, 200);
@@ -272,10 +256,8 @@ describe('Host', function() {
             request.post({url: host.getUrl(), headers: {'X-Service': 'done-x3'}}, function(err, res, body) {
               assert.equal(res.statusCode, 200);
               assert.include(body, 'some success x3');
-              postReceived = true;
-              if (errorsTriggered === 4) {
-                triggerDone();
-              }
+              host.stopListening();
+              done();
             });
           });
         });
@@ -283,7 +265,8 @@ describe('Host', function() {
     });
     it('a service\'s output can be cached via a `X-Cache-Key` header', function(done) {
       var host = new Host({
-        outputOnListen: false
+        outputOnListen: false,
+        silent: true
       });
 
       var cachedCount = 0;
@@ -354,7 +337,7 @@ describe('Host', function() {
     it('can authorize incoming requests via a `X-Auth-Token` header', function(done) {
       var host = new Host({
         outputOnListen: false,
-        logErrors: false,
+        silent: true,
         authToken: 'test-token'
       });
 
@@ -387,6 +370,7 @@ describe('Host', function() {
     it('can be used to set the default cache timeout of all services', function(done) {
       var host = new Host({
         outputOnListen: false,
+        silent: true,
         serviceCacheTimeout: 20
       });
 
