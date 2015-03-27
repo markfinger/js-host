@@ -1,5 +1,6 @@
-var assert = require('chai').assert;
 var path = require('path');
+var child_process = require('child_process');
+var assert = require('chai').assert;
 var request = require('request');
 var DevHost = require('../lib/DevHost');
 var DevService = require('../lib/DevService');
@@ -121,17 +122,65 @@ describe('DevHost', function() {
       ];
 
       host.listen(function() {
-        request.post({url: host.getUrl(), headers: {'X-SERVICE': '__hotload'}, json: true, body: {services: services}}, function(err, res, body) {
+        request.post({url: host.getUrl(), headers: {'X-Service': '__hotload'}, json: true, body: {services: services}}, function(err, res, body) {
           assert.equal(body, 'Success');
-          request.post({url: host.getUrl(), headers: {'X-SERVICE': 'echo'}, json: true, body: {echo: 'test1'}}, function(err, res, body) {
+          request.post({url: host.getUrl(), headers: {'X-Service': 'echo'}, json: true, body: {echo: 'test1'}}, function(err, res, body) {
             assert.equal(body, 'test1');
-            request.post({url: host.getUrl(), headers: {'X-SERVICE': 'echo-async'}, json: true, body: {echo: 'test2'}}, function(err, res, body) {
+            request.post({url: host.getUrl(), headers: {'X-Service': 'echo-async'}, json: true, body: {echo: 'test2'}}, function(err, res, body) {
               assert.equal(body, 'test2');
               host.stopListening();
               done();
             });
           });
         });
+      });
+    });
+  });
+  describe('__shutdown', function() {
+    it('is added on startup', function() {
+      var host = new DevHost();
+      assert.isDefined(host.services.__shutdown);
+    });
+    it('can shutdown on request', function(done) {
+      var start_js = child_process.spawn(
+        'node',
+        [path.join(__dirname, '..', 'bin', 'start.js')]
+      );
+
+      var hasStarted = false;
+      var finalRequestCompleted = false;
+
+      // Wait for stdout, which should indicate the server's running
+      start_js.stdout.on('data', function(data) {
+        if (hasStarted) {
+          return;
+        }
+        assert.equal(data.toString(), 'Server listening at 127.0.0.1:63578\n');
+        hasStarted = true;
+        request.post({url: 'http://127.0.0.1:63578', headers: {'X-Service': '__shutdown'}}, function(err, res, body) {
+          assert.isNull(err);
+          assert.equal(res.statusCode, 200);
+          assert.equal(body, 'Shutting down...');
+          request.post({url: 'http://127.0.0.1:63578', headers: {'X-Service': '__shutdown'}}, function(err) {
+            assert.isNotNull(err);
+            finalRequestCompleted = true;
+          });
+        });
+      });
+
+      var stderr = '';
+
+      start_js.stderr.on('data', function(data) {
+        stderr += data.toString();
+      });
+
+      start_js.on('exit', function() {
+        if (stderr) {
+          throw new Error(stderr);
+        }
+        assert.isTrue(hasStarted);
+        assert.isTrue(finalRequestCompleted);
+        done();
       });
     });
   });

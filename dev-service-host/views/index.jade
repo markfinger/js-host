@@ -1,0 +1,43 @@
+doctype html
+html(lang="en")
+    head
+        title Dev service host
+        link(rel="stylesheet", href="bootstrap.css")
+    body
+        div.container
+            h1!= 'Dev service host (' + packageJson.version + ')'
+            p
+                span Listening at&nbsp;
+                em!= host.getUrl()
+            div.row
+                div.col-md-4
+                    h2 Engine
+                    dl
+                        dt Name
+                        dd= process.title
+                        dt Version
+                        dd= process.version
+                        dt Pid
+                        dd= process.pid
+                    h2 Host config
+                    dl
+                        each value, key in host.config
+                            if value
+                                dt= key
+                                dd= value
+                div.col-md-4
+                    h2 Services available
+                    ul.list-unstyled
+                        each service in host.services
+                            if service.name.slice(0, 2) !== '__'
+                                li!= service.name
+                        each service in host.services
+                            if service.name.slice(0, 2) === '__'
+                                li!= service.name
+                div.col-md-4
+                    h2 Host commands
+                    button.btn.btn-default.btn-block Clear cache
+                    button.btn.btn-default.btn-block Restart
+                    button.btn.btn-default.btn-block.js-shutdown-btn Shutdown
+        script(src="jquery.js")
+        script(src="dev_service_host.js")

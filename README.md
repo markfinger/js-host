@@ -72,11 +72,11 @@ Communicating with the host
 
 ### Headers
 
-- `X-SERVICE`: the name of the service that you want to call.
-- `X-CACHE-KEY`: a token used to cache the output of the request,
+- `X-Service`: the name of the service that you want to call.
+- `X-Cache-Key`: a token used to cache the output of the request,
   all concurrent or subsequent requests will resolve to the same
   output until it expires.
-- `X-AUTH-TOKEN`: an optional token used to verify incoming requests.
+- `X-Auth-Token`: an optional token used to verify incoming requests.
 
 ### Sending data
 
