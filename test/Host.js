@@ -29,6 +29,18 @@ describe('Host', function() {
       assert.deepEqual(host.config, host.defaultConfig);
     });
   });
+  describe('#serviceNameHeader', function() {
+    it('should default to \'X-Service\'', function() {
+      assert.equal(Host.prototype.serviceNameHeader, 'X-Service');
+      assert.equal(new Host().serviceNameHeader, 'X-Service');
+    });
+  });
+  describe('#cacheKeyHeader', function() {
+    it('should default to \'X-Cache-Key\'', function() {
+      assert.equal(Host.prototype.cacheKeyHeader, 'X-Cache-Key');
+      assert.equal(new Host().cacheKeyHeader, 'X-Cache-Key');
+    });
+  });
   describe('#addService()', function() {
     it('should accept an object', function() {
       var host = new Host();
@@ -143,10 +155,38 @@ describe('Host', function() {
   describe('#listen()', function() {
     it('can start the listenerServer', function(done) {
       var host = new Host({
-        outputOnListen: false
+        outputOnListen: false,
+        silent: true
       });
       host.listen(function() {
         host.stopListening();
+        done();
+      });
+    });
+  });
+  describe('#listenerServer', function() {
+    it('is set when listening', function(done) {
+      var host = new Host({
+        outputOnListen: false,
+        silent: true
+      });
+      assert.isNull(host.listenerServer);
+      host.listen(function() {
+        assert.isNotNull(host.listenerServer);
+        host.stopListening();
+        done();
+      });
+    });
+    it('is unset after listening has stopped', function(done) {
+      var host = new Host({
+        outputOnListen: false,
+        silent: true
+      });
+      assert.isNull(host.listenerServer);
+      host.listen(function() {
+        assert.isNotNull(host.listenerServer);
+        host.stopListening();
+        assert.isNull(host.listenerServer);
         done();
       });
     });
@@ -327,39 +367,6 @@ describe('Host', function() {
                   });
                 });
               });
-            });
-          });
-        });
-      });
-    });
-  });
-  describe('#authMiddleware', function() {
-    it('can authorize incoming requests via a `X-Auth-Token` header', function(done) {
-      var host = new Host({
-        outputOnListen: false,
-        silent: true,
-        authToken: 'test-token'
-      });
-
-      host.addService({
-        name: 'test',
-        handler: function(data, done) {
-          done(null, 'success');
-        }
-      });
-
-      host.listen(function() {
-        request.post({url: host.getUrl(), headers: {'X-Service': 'test'}}, function(err, res, body) {
-          assert.equal(res.statusCode, 401);
-          assert.equal(body, 'Unauthorized');
-          request.post({url: host.getUrl(), headers: {'X-Service': 'test', 'X-Auth-Token': 'wrong-token'}}, function(err, res, body) {
-            assert.equal(res.statusCode, 401);
-            assert.equal(body, 'Unauthorized');
-            request.post({url: host.getUrl(), headers: {'X-Service': 'test', 'X-Auth-Token': 'test-token'}}, function(err, res, body) {
-              assert.equal(res.statusCode, 200);
-              assert.equal(body, 'success');
-              host.stopListening();
-              done();
             });
           });
         });

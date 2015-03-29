@@ -3,12 +3,25 @@ service-host
 
 [![Build Status](https://travis-ci.org/markfinger/service-host.svg?branch=master)](https://travis-ci.org/markfinger/service-host)
 
+
 Installation
 ------------
 
 ```
 npm install service-host
 ```
+
+
+CLI usage
+---------
+
+```bash
+# Start up a service host
+node bin/start.js --config path/to/config.js
+```
+
+Config files should export an object.
+
 
 Programmatic usage
 ------------------
@@ -51,22 +64,6 @@ host.listen();
 ```
 
 
-CLI usage
----------
-
-```bash
-# Spin up a service host
-node bin/start.js --config path/to/config.js
-
-# Spin up a service host managed by PM2
-node bin/start_managed.js --name "My service host" --config path/to/config.js
-
-# Stop a service host managed by PM2
-node bin/stop_managed.js --name "My service host"
-```
-
-Config files should export a config object.
-
 Communicating with the host
 ---------------------------
 
@@ -76,7 +73,6 @@ Communicating with the host
 - `X-Cache-Key`: a token used to cache the output of the request,
   all concurrent or subsequent requests will resolve to the same
   output until it expires.
-- `X-Auth-Token`: an optional token used to verify incoming requests.
 
 ### Sending data
 
@@ -91,29 +87,22 @@ Configuring the host
 // Default config
 
 var host = new Host({
-  // The address that will be listened at
+  // The address that the host will listen at
   address: '127.0.0.1',
-  // The port that will be  listened at
+  // The port that the host will listen at
   port: '63578',
-  // A string that can be used to authenticate incoming requests
-  authToken: null,
-  // If true, some additional helpers will be activated, suffice 
-  // to say, do not set this to true if your host is open to 
-  // external connections
-  debug: false,
-  // Suppresses console output from the internal loggers
+  // If true, suppresses stdout/stderr from the host and service loggers
   silent: false,
-  // If true, the host will write to stdout once it is listening 
-  // and open to connections
+  // If true, the host will write to stdout once it is listening for requests
   outputOnListen: true,
   // The maximum size of an incoming request's body
   requestDataLimit: '10mb',
   // The time between a cache key/value being set and its expiry
   serviceCacheTimeout: 24 * 60 * 60 * 1000, // 24 hours
-  // An optional array of services to load during the host's 
-  // initialization. Services should objects with `name` and 
-  // either `file` or `handler` properties. The `file` prop
-  // should be a path to a file which exports a handler.
+  // An optional array of services to load during the host's initialization.
+  // Services should be objects with `name` and either `file` or `handler`
+  // properties. The `file` prop should be a path to a file which exports a
+  // handler function.
   services: null
 });
 ```

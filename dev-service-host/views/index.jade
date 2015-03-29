@@ -1,45 +1,53 @@
 doctype html
 html(lang="en")
-    head
-        title Dev service host
-        link(rel="stylesheet", href="bootstrap.css")
-        link(rel="stylesheet", href="dev_service_host.css")
-    body
-        div.container
-            h1!= 'Dev service host (' + packageJson.version + ')'
-            p
-                span Listening at&nbsp;
-                em!= host.getUrl()
-            div.row
-                div.col-md-4
-                    h2 Engine
-                    dl
-                        dt Title
-                        dd= process.title
-                        dt Version
-                        dd= process.version
-                        dt Pid
-                        dd= process.pid
-                    h2 Host config
-                    dl
-                        each value, key in host.config
-                            if value
-                                dt= key
-                                dd= value
-                div.col-md-4
-                    h2 Services available
-                    ul.list-unstyled
-                        each service in host.services
-                            if service.name.slice(0, 2) !== '__'
-                                li!= service.name
-                        each service in host.services
-                            if service.name.slice(0, 2) === '__'
-                                li!= service.name
-                div.col-md-4
-                    h2 Host commands
-                    button.btn.btn-default.btn-block Clear caches
-                    button.btn.btn-default.btn-block.js-shutdown-btn Shutdown
-                    div.js-alerts-container
-        script(src="jquery.js")
-        script(src="bootstrap.js")
-        script(src="dev_service_host.js")
+  head
+    title Dev service host
+    link(rel="stylesheet", href="/node_modules/bootstrap/dist/css/bootstrap.css")
+    link(rel="stylesheet", href="/css/dev_service_host.css")
+  body
+    div.container
+      h1
+        span Dev service host&nbsp;
+        small
+          a(href=packageJson.homepage)
+            span!= packageJson.version
+      p
+        span Listening at&nbsp;
+        em!= '<a href="' + host.getUrl() + '">' + host.getUrl() + '</a>'
+      div.row
+        div.col-md-4
+          h2 Engine
+          dl
+            dt Title
+            dd= process.title
+            dt Version
+            dd= process.version
+            dt Pid
+            dd= process.pid
+          h2 Host config
+          dl
+            each value, key in host.config
+              dt!= key
+              if value === null
+                dd!= 'null'
+              else if value === undefined
+                dd!= 'undefined'
+              else
+                dd!= value
+        div.col-md-4
+          h2 Services available
+          ul.list-unstyled
+            each service in host.services
+              if service.name.slice(0, 2) !== '__'
+                li!= service.name
+            each service in host.services
+              if service.name.slice(0, 2) === '__'
+                li!= service.name
+        div.col-md-4
+          h2 Host commands
+          button.btn.btn-default.btn-block.js-clear-caches-btn Clear caches
+          button.btn.btn-default.btn-block.js-shutdown-btn Shutdown
+          div.js-alerts-container
+    script(src="/node_modules/jquery/dist/jquery.js")
+    script(src="/node_modules/bootstrap/dist/js/bootstrap.js")
+    script(src="/js/dev_service_host.js")

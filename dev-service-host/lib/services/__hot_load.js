@@ -2,7 +2,7 @@ var _ = require('lodash');
 var Service = require('../DevService');
 
 module.exports = {
-  name: '__hotload',
+  name: '__hot_load',
   handler: function(data, done) {
     var services = data.services;
 

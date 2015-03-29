@@ -15,11 +15,11 @@ $(function() {
     alert.slideDown();
   };
 
-  $('.js-shutdown-btn').on('click', function() {
+  var callService = function(name) {
     $.ajax({
       url: '/',
       headers: {
-        'X-Service': '__shutdown'
+        'X-Service': name
       },
       method: 'POST',
       success: function(data) {
@@ -38,5 +38,13 @@ $(function() {
         );
       }
     });
+  };
+
+  $('.js-clear-caches-btn').on('click', function() {
+    callService('__clear_caches');
+  });
+
+  $('.js-shutdown-btn').on('click', function() {
+    callService('__shutdown');
   });
 });

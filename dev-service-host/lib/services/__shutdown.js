@@ -8,21 +8,18 @@ module.exports = {
     if (shuttingDown) {
       return done('Already shutting down.');
     }
-
     shuttingDown = true;
 
-    this.log('Shutting down...');
-    done(null, 'Shutting down...');
+    this.log('Starting shutdown...');
+    done(null, 'Starting shutdown...');
 
     // Give the response a chance to be sent back
     // before we stop the host's listener
     setTimeout(function() {
+      this.log('Stopping host listener');
       this.host.stopListening();
-
-      // Force a shutdown
-      setTimeout(function() {
-        process.exit();
-      }, 500)
+      this.log('Exiting process');
+      process.exit();
     }.bind(this), 0);
   }
 };
