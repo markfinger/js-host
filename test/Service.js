@@ -1,5 +1,8 @@
-var Service = require('../lib/Service');
+var path = require('path');
 var assert = require('chai').assert;
+var Service = require('../lib/Service');
+
+var pathToEchoService = path.join(__dirname, 'test_services', 'echo.js');
 
 describe('Service', function() {
   describe('constructor', function() {
@@ -19,8 +22,7 @@ describe('Service', function() {
   describe('#name', function() {
     it('should be validated', function() {
       new Service({
-        name: 'test', handler: function() {
-        }
+        name: 'test', handler: function() {}
       });
       assert.throws(
         function() {
@@ -53,6 +55,13 @@ describe('Service', function() {
         '"" is not a valid service name'
       );
     });
+    it('should default to the file prop, if it is defined', function() {
+      var service = new Service({
+        file: '/some/test/file.js',
+        handler: function() {}
+      });
+      assert.equal(service.name, '/some/test/file.js');
+    });
   });
   describe('#handler', function() {
     it('should be validated', function() {
@@ -72,6 +81,14 @@ describe('Service', function() {
         },
         'Service handlers must be a function'
       );
+    });
+    it('should default to the required output of the file prop, if it is defined', function() {
+      var service = new Service({
+        file: pathToEchoService
+      });
+      assert.equal(service.name, pathToEchoService);
+      assert.equal(service.file, pathToEchoService);
+      assert.equal(service.handler, require(pathToEchoService));
     });
   });
   describe('#call()', function() {
