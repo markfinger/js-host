@@ -1,12 +1,11 @@
 var path = require('path');
 var fs = require('fs');
-var request = require('request');
 var assert = require('chai').assert;
 var Host = require('../lib/Host');
 var Service = require('../lib/Service');
-
 var echo = require('./test_services/echo');
-var echoAsync = require('./test_services/echo_async');
+
+var post = require('./utils').post;
 
 describe('Host', function() {
   describe('constructor', function() {
@@ -27,18 +26,6 @@ describe('Host', function() {
       assert.notStrictEqual(host.config, host.defaultConfig);
       assert.strictEqual(host.config, config);
       assert.deepEqual(host.config, host.defaultConfig);
-    });
-  });
-  describe('#serviceNameHeader', function() {
-    it('should default to \'X-Service\'', function() {
-      assert.equal(Host.prototype.serviceNameHeader, 'X-Service');
-      assert.equal(new Host().serviceNameHeader, 'X-Service');
-    });
-  });
-  describe('#cacheKeyHeader', function() {
-    it('should default to \'X-Cache-Key\'', function() {
-      assert.equal(Host.prototype.cacheKeyHeader, 'X-Cache-Key');
-      assert.equal(new Host().cacheKeyHeader, 'X-Cache-Key');
     });
   });
   describe('#addService()', function() {
@@ -79,15 +66,13 @@ describe('Host', function() {
       var host = new Host();
       host.addService({
         name: 'test',
-        handler: function() {
-        }
+        handler: function() {}
       });
       assert.throws(
         function() {
           host.addService({
             name: 'test',
-            handler: function() {
-            }
+            handler: function() {}
           });
         },
         'A service has already been defined with the name "test"'
@@ -212,14 +197,15 @@ describe('Host', function() {
       });
 
       host.listen(function() {
-        request.post(host.getUrl(), function(err, res, body) {
+        console.log(post(host, 'foo'))
+        post(host, 'foo', function(err, res, body) {
           assert.equal(res.statusCode, '404');
           assert.equal(body, 'Not found');
-          request.post({url: host.getUrl(), headers: {'X-Service': 'service1'}}, function(err, res, body) {
+          post(host, 'service1', function(err, res, body) {
             assert.equal(body, 'in handler1');
-            request.post({url: host.getUrl(), headers: {'X-Service': 'service2'}}, function(err, res, body) {
+            post(host, 'service2', function(err, res, body) {
               assert.equal(body, 'in handler2');
-              request.post({url: host.getUrl(), headers: {'X-Service': 'service3'}}, function(err, res, body) {
+              post(host, 'bar', function(err, res, body) {
                 assert.equal(res.statusCode, '404');
                 assert.equal(body, 'Not found');
                 host.stopListening();
@@ -251,7 +237,7 @@ describe('Host', function() {
       });
 
       host.listen(function() {
-        request.post({url: host.getUrl(), headers: {'X-Service': 'text-test'}, json: true, body: { text: text }}, function(err, res, body) {
+        post(host, 'text-test', {data: {text: text}}, function(err, res, body) {
           assert.equal(body, 'success: ' + text);
           host.stopListening();
           done();
@@ -287,13 +273,13 @@ describe('Host', function() {
       });
 
       host.listen(function() {
-        request.post({url: host.getUrl(), headers: {'X-Service': 'done-x1'}}, function(err, res, body) {
+        post(host, 'done-x1', function(err, res, body) {
           assert.equal(res.statusCode, 200);
           assert.include(body, 'some success');
-          request.post({url: host.getUrl(), headers: {'X-Service': 'done-x2'}}, function(err, res, body) {
+          post(host, 'done-x2', function(err, res, body) {
             assert.equal(res.statusCode, 500);
             assert.include(body, 'x2');
-            request.post({url: host.getUrl(), headers: {'X-Service': 'done-x3'}}, function(err, res, body) {
+            post(host, 'done-x3', function(err, res, body) {
               assert.equal(res.statusCode, 200);
               assert.include(body, 'some success x3');
               host.stopListening();
@@ -327,38 +313,22 @@ describe('Host', function() {
         }
       });
 
-      var cachedCountOptions1 = {
-        url: host.getUrl(),
-        headers: {
-          'X-Service': 'cached-count',
-          'X-Cache-Key': 'test-key-1'
-        }
-      };
-
-      var cachedCountOptions2 = {
-        url: host.getUrl(),
-        headers: {
-          'X-Service': 'cached-count',
-          'X-Cache-Key': 'test-key-2'
-        }
-      };
-
       host.listen(function() {
-        request.post(cachedCountOptions1, function(err, res, body) {
+        post(host, 'cached-count', {cacheKey: 'test-key-1'}, function(err, res, body) {
           assert.equal(body, '1');
-          request.post(cachedCountOptions1, function(err, res, body) {
+          post(host, 'cached-count', {cacheKey: 'test-key-1'}, function(err, res, body) {
             assert.equal(body, '1');
-            request.post({url: host.getUrl(), headers: {'X-Service': 'count'}}, function(err, res, body) {
+            post(host, 'count', function(err, res, body) {
               assert.equal(body, '1');
-              request.post({url: host.getUrl(), headers: {'X-Service': 'count'}}, function(err, res, body) {
+              post(host, 'count', function(err, res, body) {
                 assert.equal(body, '2');
-                request.post({url: host.getUrl(), headers: {'X-Service': 'count'}}, function(err, res, body) {
+                post(host, 'count', function(err, res, body) {
                   assert.equal(body, '3');
-                  request.post(cachedCountOptions2, function(err, res, body) {
+                  post(host, 'cached-count', {cacheKey: 'test-key-2'}, function(err, res, body) {
                     assert.equal(body, '2');
-                    request.post(cachedCountOptions1, function(err, res, body) {
+                    post(host, 'cached-count', {cacheKey: 'test-key-1'}, function(err, res, body) {
                       assert.equal(body, '1');
-                      request.post(cachedCountOptions2, function(err, res, body) {
+                      post(host, 'cached-count', {cacheKey: 'test-key-2'}, function(err, res, body) {
                         assert.equal(body, '2');
                         host.stopListening();
                         done();
@@ -390,15 +360,13 @@ describe('Host', function() {
         }
       });
 
-      var requestOptions = {url: host.getUrl(), headers: {'X-Service': 'test', 'X-Cache-Key': 'test-key'}};
-
       host.listen(function() {
-        request.post(requestOptions, function(err, res, body) {
+        post(host, 'test', {cacheKey: 'test-key'}, function(err, res, body) {
           assert.equal(body, '1');
-          request.post(requestOptions, function(err, res, body) {
+          post(host, 'test', {cacheKey: 'test-key'}, function(err, res, body) {
             assert.equal(body, '1');
             setTimeout(function() {
-              request.post(requestOptions, function(err, res, body) {
+              post(host, 'test', {cacheKey: 'test-key'}, function(err, res, body) {
                 assert.equal(body, '2');
                 host.stopListening();
                 done();
