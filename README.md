@@ -98,7 +98,7 @@ var host = new Host({
   // The maximum size of an incoming request's body
   requestDataLimit: '10mb',
   // The time between a cache key/value being set and its expiry
-  serviceCacheTimeout: 24 * 60 * 60 * 1000, // 24 hours
+  cacheTimeout: 24 * 60 * 60 * 1000, // 24 hours
   // An optional array of services to load during the host's initialization.
   // Services should be objects with `name` and either `file` or `handler`
   // properties. The `file` prop should be a path to a file which exports a

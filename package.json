@@ -24,7 +24,8 @@
   "devDependencies": {
     "chai": "^2.2.0",
     "mocha": "^2.2.4",
-    "request": "^2.55.0"
+    "request": "^2.55.0",
+    "spawn-sync": "^1.0.6"
   },
   "scripts": {
     "test": "mocha",

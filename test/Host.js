@@ -1,8 +1,12 @@
+'use strict';
+
 var path = require('path');
 var fs = require('fs');
 var assert = require('chai').assert;
-var Host = require('../lib/Host');
+var request = require('request');
+var _ = require('lodash');
 var Service = require('../lib/Service');
+var Host = require('../lib/Host');
 var echo = require('./test_services/echo');
 
 var post = require('./utils').post;
@@ -41,17 +45,28 @@ describe('Host', function() {
       assert.equal(host.services.test.name, 'test');
       assert.strictEqual(host.services.test.handler, service.handler);
     });
+    it('should bind the service\'s `host` prop to itself', function(done) {
+      var host = new Host();
+      var service = {
+        name: 'test',
+        handler: function() {
+          assert.strictEqual(this.host, host);
+          done();
+        }
+      };
+      host.addService(service);
+      assert.strictEqual(host.services.test.host, host);
+      host.callService('test');
+    });
     it('can be called multiple times', function() {
       var host = new Host();
       host.addService({
         name: 'test1',
-        handler: function() {
-        }
+        handler: function() {}
       });
       host.addService({
         name: 'test2',
-        handler: function() {
-        }
+        handler: function() {}
       });
       assert.isDefined(host.services.test1);
       assert.isDefined(host.services.test2);
@@ -176,7 +191,33 @@ describe('Host', function() {
       });
     });
   });
-  describe('#router()', function() {
+  describe('/config endpoint', function() {
+    it('can expose a host\'s config as JSON', function(done) {
+      var host = new Host({
+        outputOnListen: false,
+        silent: true,
+        services: [{
+          name: 'foo',
+          handler: function() {}
+        }]
+      });
+      host.listen(function() {
+        request(host.getUrl() + '/config', function(err, res, body) {
+          assert.isNull(err);
+          var config = JSON.parse(body);
+          assert.isObject(config);
+          assert.equal(config.address, host.config.address);
+          assert.equal(config.port, host.config.port);
+          assert.isArray(config.services);
+          assert.equal(config.services.length, 1);
+          assert.equal(config.services[0].name, 'foo');
+          host.stopListening();
+          done();
+        });
+      });
+    });
+  });
+  describe('service routing and handling', function() {
     it('requests can be routed to a service', function(done) {
       var host = new Host({
         outputOnListen: false,
@@ -197,7 +238,6 @@ describe('Host', function() {
       });
 
       host.listen(function() {
-        console.log(post(host, 'foo'))
         post(host, 'foo', function(err, res, body) {
           assert.equal(res.statusCode, '404');
           assert.equal(body, 'Not found');
@@ -289,7 +329,7 @@ describe('Host', function() {
         });
       });
     });
-    it('a service\'s output can be cached via a `X-Cache-Key` header', function(done) {
+    it('a service\'s output can be cached via a `cache-key` param', function(done) {
       var host = new Host({
         outputOnListen: false,
         silent: true
@@ -343,12 +383,12 @@ describe('Host', function() {
       });
     });
   });
-  describe('#serviceCacheTimeout', function() {
+  describe('#cacheTimeout', function() {
     it('can be used to set the default cache timeout of all services', function(done) {
       var host = new Host({
         outputOnListen: false,
         silent: true,
-        serviceCacheTimeout: 20
+        cacheTimeout: 20
       });
 
       var count = 0;

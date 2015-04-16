@@ -1,8 +1,7 @@
-var path = require('path');
+'use strict';
+
 var assert = require('chai').assert;
 var Service = require('../lib/Service');
-
-var pathToEchoService = path.join(__dirname, 'test_services', 'echo.js');
 
 describe('Service', function() {
   describe('constructor', function() {
@@ -12,7 +11,8 @@ describe('Service', function() {
     it('should accept an object and initialise properly', function() {
       var obj = {
         name: 'echo',
-        handler: function() {}
+        handler: function() {},
+        cacheTimeout: null
       };
       var service = new Service(obj);
       assert.equal(service.name, 'echo');
@@ -22,7 +22,7 @@ describe('Service', function() {
   describe('#name', function() {
     it('should be validated', function() {
       new Service({
-        name: 'test', handler: function() {}
+        name: 'test', handler: function() {}, cacheTimeout: null
       });
       assert.throws(
         function() {
@@ -55,19 +55,11 @@ describe('Service', function() {
         '"" is not a valid service name'
       );
     });
-    it('should default to the file prop, if it is defined', function() {
-      var service = new Service({
-        file: '/some/test/file.js',
-        handler: function() {}
-      });
-      assert.equal(service.name, '/some/test/file.js');
-    });
   });
   describe('#handler', function() {
     it('should be validated', function() {
       new Service({
-        name: 'test', handler: function() {
-        }
+        name: 'test', handler: function() {}, cacheTimeout: null
       });
       assert.throws(
         function() {
@@ -82,14 +74,6 @@ describe('Service', function() {
         'Service handlers must be a function'
       );
     });
-    it('should default to the required output of the file prop, if it is defined', function() {
-      var service = new Service({
-        file: pathToEchoService
-      });
-      assert.equal(service.name, pathToEchoService);
-      assert.equal(service.file, pathToEchoService);
-      assert.equal(service.handler, require(pathToEchoService));
-    });
   });
   describe('#call()', function() {
     it('the output of services can be cached', function(done) {
@@ -99,7 +83,8 @@ describe('Service', function() {
           setTimeout(function() {
             done(null, data.count);
           }, 10);
-        }
+        },
+        cacheTimeout: null
       });
 
       assert.equal(service.cache.get('test-key'), null);
@@ -131,14 +116,16 @@ describe('Service', function() {
     it('the handler should be provided with a context', function(done) {
       var service = new Service({
         name: 'test',
+        host: 'foo host',
         handler: function() {
           assert.notStrictEqual(this, service);
           assert.notStrictEqual(this, global);
           assert.isObject(this);
-          assert.equal('test', this.name);
-          assert.isFunction(this.log);
+          assert.equal(this.name, 'test');
+          assert.equal(this.host, 'foo host');
           done();
-        }
+        },
+        cacheTimeout: null
       });
       service.call();
     });
@@ -149,7 +136,8 @@ describe('Service', function() {
           setTimeout(function() {
             done(null, data.count);
           }, 25);
-        }
+        },
+        cacheTimeout: null
       });
 
       assert.equal(service.cache.get('test-key'), null);
