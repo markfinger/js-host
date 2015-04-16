@@ -34,7 +34,7 @@ config = require(config);
 
 var host = new Host(config);
 
-if (argv.port) {
+if (argv.port !== undefined) {
   config.port = argv.port;
 }
 
