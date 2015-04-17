@@ -11,98 +11,61 @@ Installation
 npm install service-host
 ```
 
+Usage
+-----
 
-CLI usage
----------
-
-```bash
-# Start up a service host
-node bin/start.js --config path/to/config.js
-```
-
-Config files should export an object.
-
-
-Programmatic usage
-------------------
+Create a file `services.config.js` containing the following:
 
 ```javascript
-var Host = require('service-host');
-
-var host = new Host({
-  debug: true,
-  port: 9000,
-});
-
-host.addService({
-  name: 'foo',
-  handler: function(data, done) {
-    // ...
-    if (someError) {
-      done(someError);
-    } else {
-      done(null, output);
+module.exports = {
+  // The port that the host will listen at
+  port: '9009',
+  // The services that will be available
+  services: [{
+    name: 'some-service',
+    handler: function(data, cb) {
+      // ...
+      
+      if (err) {
+        // Send an error response back
+        return cb(err);
+      }
+      
+      var obj = {
+        // ...
+      };
+      
+      // Return a success response with data
+      cb(null, JSON.stringify(someObj));
     }
-  }
+  }]
 });
-
-// Call a service
-host.callService(
-  // The name of the service to call
-  'foo',
-  // An optional data set to pass to the service
-  {},
-  // An optional cache key to cache the output of the service
-  'some-cache-key',
-  // A callback which is provided with the resulting error and output
-  function(err, output) {}
-);
-
-// Start a process which listens at the configured
-// address and port
-host.listen();
 ```
+
+Config files are normal JS files, so you can `require` libraries and expose 
+whatever functionality you want.
+
+Once you have configured the host, you can start the host by calling:
+
+```bash
+node_modules/.bin/service-host services.config.js
+```
+
+The host will validate the config, then start listening at the designated 
+port. Once the host is listening, you can start calling the services.
 
 
 Communicating with the host
 ---------------------------
 
-### Headers
+Services are exposed at the `/service/<name>` endpoint, via POST requests.
 
-- `X-Service`: the name of the service that you want to call.
-- `X-Cache-Key`: a token used to cache the output of the request,
-  all concurrent or subsequent requests will resolve to the same
-  output until it expires.
+To send data, add a `content-type` header set to `application/json`, and pass
+serialized JSON as the request's body.
 
-### Sending data
+Service output can be optionally cached by adding a `cache-key` param, 
+eg `/service/some-service?cache-key=<key>`.
 
-Set the request's content-type to `application/json` and pass the data in 
-as the request's body. It will be deserialised and passed to the service.
-
-
-Configuring the host
---------------------
-
-```javascript
-// Default config
-
-var host = new Host({
-  // The address that the host will listen at
-  address: '127.0.0.1',
-  // The port that the host will listen at
-  port: '63578',
-  // If true, suppresses stdout/stderr from the host and service loggers
-  silent: false,
-  // If true, the host will write to stdout once it is listening for requests
-  outputOnListen: true,
-  // The maximum size of an incoming request's body
-  requestDataLimit: '10mb',
-  // The time between a cache key/value being set and its expiry
-  cacheTimeout: 24 * 60 * 60 * 1000, // 24 hours
-  // An optional array of services to load during the host's initialization.
-  // Services should be objects with `name` and either `file` or `handler`
-  // properties. The `file` prop should be a path to a file which exports a
-  // handler function.
-  services: null
-});
-```
+If a cache key is provided, all concurrent requests using the some key will be
+wait until the first resolves, and then receive the output of the first request.
+All subsequent requests will resolve to the same output until it has expired.
