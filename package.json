@@ -4,6 +4,9 @@
   "description": "JS service host",
   "author": "Mark Finger <markfinger@gmail.com>",
   "license": "MIT",
+  "bin": {
+    "service-host": "bin/service-host.js"
+  },
   "main": "lib/Host.js",
   "repository": {
     "type": "git",
