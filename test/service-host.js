@@ -5,10 +5,12 @@ var assert = require('chai').assert;
 var child_process = require('child_process');
 var _ = require('lodash');
 var spawnSync = require('spawn-sync'); // node 0.10.x support
+var request = require('request');
 var Host = require('..');
+var Manager = require('../lib/Manager');
+var serviceHost = path.join(__dirname, '..', 'bin', 'service-host.js');
 var post = require('./utils').post;
 
-var serviceHost = path.join(__dirname, '..', 'bin', 'service-host.js');
 var pathToTestConfig = path.join(__dirname, 'test_config', 'config.js');
 
 describe('bin/service-host.js', function() {
@@ -128,8 +130,11 @@ describe('bin/service-host.js', function() {
       var config = JSON.parse(data.toString());
       assert.equal(config.address, '127.0.0.1');
       assert.equal(config.port, '8080');
-      // Ensure both ports are coerced to the same type
-      assert.notEqual('' + config.port, '' + testConfig.port);
+      assert.notEqual(
+        // Ensure both ports are coerced to the same type
+        '' + config.port,
+        '' + testConfig.port
+      );
       assert.isArray(config.services);
       assert.equal(config.services.length, 3);
       assert.isTrue(config.silent);
@@ -143,6 +148,41 @@ describe('bin/service-host.js', function() {
         assert.equal(body, 'foo');
         process.kill();
         done();
+      });
+    });
+  });
+  it('can start a manager process which can start/stop hosts', function(done) {
+    var process = child_process.spawn(
+      'node', [serviceHost, pathToTestConfig, '--manager', '--json']
+    );
+
+    process.stdout.on('data', function(data) {
+      var output = data.toString();
+      var config = JSON.parse(output);
+      config.services = null;
+      var manager = new Manager(config);
+      request.post(manager.getUrl() + '/start?config=' + encodeURIComponent(pathToTestConfig), function(err, res, body) {
+        assert.isNull(err);
+        assert.notEqual(body, output);
+        var hostConfig = JSON.parse(body);
+        assert.equal(hostConfig.address, '127.0.0.1');
+        assert.isNumber(hostConfig.port);
+        var host = new Host(_.omit(hostConfig, 'services'));
+        post(host, 'echo', {data: {echo: 'test'}}, function(err, res, body) {
+          assert.isNull(err);
+          assert.equal(body, 'test');
+          request.post(manager.getUrl() + '/stop?config=' + encodeURIComponent(pathToTestConfig), function(err, res, body) {
+            assert.isNull(err);
+            assert.deepEqual(JSON.parse(body), hostConfig);
+            setTimeout(function() {
+              post(host, 'echo', {data: {echo: 'test'}}, function(err, res, body) {
+                assert.instanceOf(err, Error);
+                process.kill();
+                done();
+              });
+            }, 50);
+          });
+        });
       });
     });
   });
