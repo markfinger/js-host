@@ -441,5 +441,21 @@ describe('Host', function() {
       });
       assert.strictEqual(host.logger, logger);
     });
-  })
+  });
+  describe('/type endpoint', function() {
+    it('should return "Host"', function(done) {
+      var host = new Host({
+        silent: true,
+        outputOnListen: false
+      });
+      host.listen(function() {
+        request(host.getUrl() + '/type', function(err, res, body) {
+          assert.isNull(err);
+          assert.equal(body, 'Host');
+          host.stopListening();
+          done();
+        });
+      });
+    });
+  });
 });

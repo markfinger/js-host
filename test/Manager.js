@@ -424,5 +424,21 @@ describe('Manager', function() {
         });
       });
     });
-  })
+  });
+  describe('/type endpoint', function() {
+    it('should return "Manager"', function(done) {
+      var manager = new Manager({
+        silent: true,
+        outputOnListen: false
+      });
+      manager.listen(function() {
+        request(manager.getUrl() + '/type', function(err, res, body) {
+          assert.isNull(err);
+          assert.equal(body, 'Manager');
+          manager.stopListening();
+          done();
+        });
+      });
+    });
+  });
 });
