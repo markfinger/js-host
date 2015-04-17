@@ -3,6 +3,7 @@
 var path = require('path');
 var assert = require('chai').assert;
 var _ = require('lodash');
+var request = require('request');
 var Manager = require('../lib/Manager');
 var Host = require('../lib/Host');
 var utils = require('./utils');
@@ -11,7 +12,7 @@ var pathToTestConfig = path.join(__dirname, 'test_config', 'config.js');
 var pathToDuplicateConfig = path.join(__dirname, 'test_config', 'duplicate.js');
 
 var post = function(host, serviceName, data, cb) {
-  var config = JSON.parse(host.output);
+  var config = host.output ? JSON.parse(host.output) : host;
   // Get around validation issues caused by (de)serialization issues
   config.services = null;
   // Prevent the logger from adding handlers to the process's emitter
@@ -65,6 +66,33 @@ describe('Manager', function() {
         });
       });
     });
+  });
+  describe('/start endpoint', function() {
+    it('should be able to start a host and block until it is ready', function(done) {
+      var manager = new Manager({
+        silent: true,
+        outputOnListen: false
+      });
+      var testConfig = require(pathToTestConfig);
+      manager.listen(function() {
+        request.post({url: manager.getUrl() + '/start?config=' + encodeURIComponent(pathToTestConfig)}, function(err, res, body) {
+          assert.isNull(err);
+          assert.equal(res.statusCode, 200);
+          var config = JSON.parse(body);
+          assert.isArray(config.services);
+          assert.equal(config.services.length, testConfig.services.length);
+          assert.notEqual(config.port, testConfig.port);
+          post({port: config.port}, 'echo', {data: {'echo': 'test'}}, function(err, res, body) {
+            assert.isNull(err);
+            assert.equal(body, 'test');
+            assert.isObject(manager.hosts[pathToTestConfig]);
+            manager.hosts[pathToTestConfig].process.kill();
+            manager.stopListening();
+            done();
+          });
+        });
+      });
+    })
   });
   describe('#getHost()', function() {
     it('should accept a path to a config file, start a host on a random port, and keep track of the host', function(done) {
@@ -277,4 +305,124 @@ describe('Manager', function() {
       });
     });
   });
+  describe('/stop endpoint', function() {
+    it('should be able to stop a host', function(done) {
+      var manager = new Manager({
+        silent: true,
+        outputOnListen: false
+      });
+      var testConfig = require(pathToTestConfig);
+      manager.listen(function() {
+        manager.getHost(pathToTestConfig, function(err, host) {
+          post(host, 'echo', {data: {'echo': 'test'}}, function(err, res, body) {
+            assert.isNull(err);
+            assert.equal(body, 'test');
+            assert.isObject(manager.hosts[pathToTestConfig]);
+            request.post({url: manager.getUrl() + '/stop?config=' + encodeURIComponent(pathToTestConfig)}, function(err, res, body) {
+              setTimeout(function() {
+                assert.isNull(err);
+                assert.equal(res.statusCode, 200);
+                assert.isUndefined(manager.hosts[pathToTestConfig]);
+                var config = JSON.parse(body);
+                assert.isArray(config.services);
+                assert.equal(config.services.length, testConfig.services.length);
+                assert.notEqual(config.port, testConfig.port);
+                setTimeout(function() {
+                  post({port: config.port}, 'echo', {data: {echo: 'test'}}, function(err, res, body) {
+                    assert.instanceOf(err, Error);
+                    manager.stopListening();
+                    done();
+                  });
+                }, 50);
+              }, 50);
+            });
+          });
+        });
+      });
+    });
+    it('should accept a `timeout` param to delay stopping the host', function(done) {
+      var manager = new Manager({
+        silent: true,
+        outputOnListen: false
+      });
+      manager.listen(function() {
+        manager.getHost(pathToTestConfig, function(err, host) {
+          post(host, 'echo', {data: {'echo': 'test'}}, function(err, res, body) {
+            assert.isNull(err);
+            assert.equal(body, 'test');
+            assert.isObject(manager.hosts[pathToTestConfig]);
+            request.post(
+              {url: manager.getUrl() + '/stop?timeout=250' + '&config=' + encodeURIComponent(pathToTestConfig)},
+              function(err, res, body) {
+                assert.isNull(err);
+                assert.equal(res.statusCode, 200);
+                assert.isObject(manager.hosts[pathToTestConfig]);
+                var config = JSON.parse(body);
+                assert.isArray(config.services);
+                post({port: config.port}, 'echo', {data: {echo: 'test'}}, function(err, res, body) {
+                  assert.isNull(err);
+                  assert.equal(body, 'test');
+                  setTimeout(function() {
+                    post({port: config.port}, 'echo', {data: {echo: 'test'}}, function(err, res, body) {
+                      assert.instanceOf(err, Error);
+                      manager.stopListening();
+                      done();
+                    });
+                  }, 250);
+                });
+              }
+            );
+          });
+        });
+      });
+    });
+  });
+  describe('/start & /stop integration', function() {
+    it('after a request to /stop with a `timeout` param, a request to /start should stop the timer', function(done) {
+      var manager = new Manager({
+        silent: true,
+        outputOnListen: false
+      });
+      manager.listen(function() {
+        manager.getHost(pathToTestConfig, function(err, host) {
+          request.post(
+            {url: manager.getUrl() + '/stop?timeout=250' + '&config=' + encodeURIComponent(pathToTestConfig)},
+            function(err, res, body) {
+              assert.isNull(err);
+              setTimeout(function() {
+                assert.isNotNull(manager.hosts[pathToTestConfig].stopTimeout);
+                request.post(
+                  {url: manager.getUrl() + '/start?config=' + encodeURIComponent(pathToTestConfig)},
+                  function(err, res, body) {
+                    assert.isNull(err);
+                    assert.equal(res.statusCode, 200);
+                    assert.isObject(manager.hosts[pathToTestConfig]);
+                    assert.isNull(manager.hosts[pathToTestConfig].stopTimeout);
+                    setTimeout(function() {
+                      var config = JSON.parse(body);
+                      assert.isArray(config.services);
+                      post({port: config.port}, 'echo', {data: {echo: 'test'}}, function(err, res, body) {
+                        assert.isNull(err);
+                        assert.equal(body, 'test');
+                        setTimeout(function() {
+                          post({port: config.port}, 'echo', {data: {echo: 'test'}}, function(err, res, body) {
+                            assert.isNull(err, Error);
+                            assert.isObject(manager.hosts[pathToTestConfig]);
+                            assert.isNull(manager.hosts[pathToTestConfig].stopTimeout);
+                            manager.hosts[pathToTestConfig].process.kill();
+                            manager.stopListening();
+                            done();
+                          });
+                        }, 250);
+                      });
+                    }, 250);
+                  }
+                );
+              }, 50);
+            }
+          );
+        });
+      });
+    });
+  })
 });

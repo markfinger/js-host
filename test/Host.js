@@ -102,7 +102,10 @@ describe('Host', function() {
   });
   describe('#getUrl()', function() {
     it('should respect the defaults', function() {
-      assert.equal(new Host({silent: true}).getUrl(), 'http://127.0.0.1:63578');
+      assert.equal(
+        new Host({silent: true}).getUrl(),
+        'http://' + Host.prototype.defaultConfig.address + ':' + Host.prototype.defaultConfig.port
+      );
     });
     it('should respect the config', function() {
       assert.equal(
