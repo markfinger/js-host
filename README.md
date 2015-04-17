@@ -26,17 +26,15 @@ module.exports = {
     handler: function(data, cb) {
       // ...
       
-      if (err) {
-        // Send an error response back
-        return cb(err);
-      }
+      // Send an error response
+      if (err) return cb(err);
       
-      var obj = {
+      var output = JSON.stringify({
         // ...
-      };
+      });
       
-      // Return a success response with data
-      cb(null, JSON.stringify(someObj));
+      // Send a success response with data
+      cb(null, output);
     }
   }]
 });
