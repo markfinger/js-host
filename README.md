@@ -62,8 +62,14 @@ To send data, add a `content-type` header set to `application/json`, and pass
 serialized JSON as the request's body.
 
 Service output can be optionally cached by adding a `cache-key` param, 
-eg `/service/some-service?cache-key=<key>`.
+for example:
+```
+/service/some-service?cache-key=<key>
+```
 
-If a cache key is provided, all concurrent requests using the some key will be
-wait until the first resolves, and then receive the output of the first request.
-All subsequent requests will resolve to the same output until it has expired.
+If concurrent requests use the same `cache-key` param, the first request
+will trigger the call to the service, and the other requests will be blocked 
+until the first has resolved.
+
+If a `cache-key` param is provided and the service provides a success response, all 
+subsequent requests will resolve to the same output until the output has expired.
