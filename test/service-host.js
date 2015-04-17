@@ -3,6 +3,7 @@
 var path = require('path');
 var assert = require('chai').assert;
 var child_process = require('child_process');
+var _ = require('lodash');
 var spawnSync = require('spawn-sync'); // node 0.10.x support
 var Host = require('..');
 var post = require('./utils').post;
@@ -16,7 +17,9 @@ describe('bin/service-host.js', function() {
       'node', [serviceHost, pathToTestConfig]
     );
 
-    var host = new Host(require('./test_config/config.js'));
+    var host = new Host(
+      _.defaults({silent: true}, require('./test_config/config.js'))
+    );
 
     // Wait for stdout, which should indicate the server's running
     process.stdout.on('data', function(data) {
@@ -56,7 +59,9 @@ describe('bin/service-host.js', function() {
       'node', [serviceHost, pathToTestConfig]
     );
 
-    var host = new Host(require('./test_config/config.js'));
+    var host = new Host(
+      _.defaults({silent: true}, require('./test_config/config.js'))
+    );
 
     var stderr = '';
 
@@ -128,7 +133,10 @@ describe('bin/service-host.js', function() {
       assert.isArray(config.services);
       assert.equal(config.services.length, 3);
       assert.isTrue(config.silent);
-      var host = new Host({port: config.port});
+      var host = new Host({
+        silent: true,
+        port: config.port
+      });
       assert.equal(host.getUrl(), 'http://127.0.0.1:8080');
       post(host, 'echo', {data: {echo: 'foo'}}, function(err, res, body) {
         assert.isNull(err);

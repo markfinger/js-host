@@ -17,24 +17,30 @@ describe('Host', function() {
       assert.isFunction(Host);
     });
     it('should instantiate with properties set correctly', function() {
-      var host = new Host();
+      var host = new Host({silent: true});
       assert.isObject(host.config);
       assert.notStrictEqual(host.config, host.defaultConfig);
-      assert.deepEqual(host.config, host.defaultConfig);
       assert.isObject(host.services);
+      assert.deepEqual(
+        _.omit(host.config, 'silent'),
+        _.omit(host.defaultConfig, 'silent')
+      );
       assert.deepEqual(host.services, Object.create(null));
     });
     it('the constructor should accept a config', function() {
-      var config = {};
+      var config = {silent: true};
       var host = new Host(config);
       assert.notStrictEqual(host.config, host.defaultConfig);
       assert.strictEqual(host.config, config);
-      assert.deepEqual(host.config, host.defaultConfig);
+      assert.deepEqual(
+        _.omit(host.config, 'silent'),
+        _.omit(host.defaultConfig, 'silent')
+      );
     });
   });
   describe('#addService()', function() {
     it('should accept an object', function() {
-      var host = new Host();
+      var host = new Host({silent: true});
       var service = {
         name: 'test',
         handler: function() {}
@@ -46,7 +52,7 @@ describe('Host', function() {
       assert.strictEqual(host.services.test.handler, service.handler);
     });
     it('should bind the service\'s `host` prop to itself', function(done) {
-      var host = new Host();
+      var host = new Host({silent: true});
       var service = {
         name: 'test',
         handler: function() {
@@ -59,7 +65,7 @@ describe('Host', function() {
       host.callService('test');
     });
     it('can be called multiple times', function() {
-      var host = new Host();
+      var host = new Host({silent: true});
       host.addService({
         name: 'test1',
         handler: function() {}
@@ -78,7 +84,7 @@ describe('Host', function() {
       assert.isFunction(host.services.test2.handler);
     });
     it('throws an error if a service is added with a conflicting name', function() {
-      var host = new Host();
+      var host = new Host({silent: true});
       host.addService({
         name: 'test',
         handler: function() {}
@@ -96,15 +102,22 @@ describe('Host', function() {
   });
   describe('#getUrl()', function() {
     it('should respect the defaults', function() {
-      assert.equal(new Host().getUrl(), 'http://127.0.0.1:63578');
+      assert.equal(new Host({silent: true}).getUrl(), 'http://127.0.0.1:63578');
     });
     it('should respect the config', function() {
-      assert.equal(new Host({address: 'foo', port: 'bar'}).getUrl(), 'http://foo:bar');
+      assert.equal(
+        new Host({
+          address: 'foo',
+          port: 'bar',
+          silent: true
+        }).getUrl(),
+        'http://foo:bar'
+      );
     });
   });
   describe('#callService()', function() {
     it('can call a service with a callback', function(done) {
-      var host = new Host();
+      var host = new Host({silent: true});
       host.addService({
         name: 'test',
         handler: function(data, done) {
@@ -120,7 +133,7 @@ describe('Host', function() {
       });
     });
     it('can optionally pass data to a service', function(done) {
-      var host = new Host();
+      var host = new Host({silent: true});
       var dataProvided = {test: 'foo'};
       host.addService({
         name: 'test',
@@ -136,7 +149,7 @@ describe('Host', function() {
       });
     });
     it('services can complete asynchronously', function(done) {
-      var host = new Host();
+      var host = new Host({silent: true});
       host.addService({
         name: 'test',
         handler: function(data, done) {
@@ -417,4 +430,13 @@ describe('Host', function() {
       });
     });
   });
+  describe('#logger', function() {
+    it('should be configurable via a config\'s `logger` prop', function() {
+      var logger = {};
+      var host = new Host({
+        logger: logger
+      });
+      assert.strictEqual(host.logger, logger);
+    });
+  })
 });

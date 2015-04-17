@@ -52,11 +52,3 @@ if (argv.json) {
 }
 
 host.listen(onListen);
-
-process.on('uncaughtException', function(err) {
-  console.error('uncaughtException', err);
-  if (err && err.stack) {
-    console.error(err.stack);
-  }
-  process.exit();
-});
