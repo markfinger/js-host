@@ -22,12 +22,20 @@ var argv = require('yargs')
     alias: 'manager',
     description: 'Run a manager process'
   })
+  .option('d', {
+    alias: 'detached',
+    description: 'Run the host or manager in a detached process'
+  })
   .help('h').alias('h', 'help')
   .strict()
   .argv;
 
+var fs = require('fs');
 var path = require('path');
+var child_process = require('child_process');
 var absolutePath = require('absolute-path'); // node 0.10.x support
+var tmp = require('tmp');
+var _ = require('lodash');
 var Host = require('../lib/Host');
 var Manager = require('../lib/Manager');
 
@@ -38,6 +46,12 @@ if (!absolutePath(config)) {
 }
 
 config = require(config);
+
+var runAsDetachedProcess = false;
+if (argv.detached) {
+  argv.j = argv.json = true;
+  runAsDetachedProcess = true;
+}
 
 var host;
 if (argv.manager) {
@@ -63,4 +77,60 @@ if (argv.json) {
   };
 }
 
-host.listen(onListen);
+if (!runAsDetachedProcess) {
+  return host.listen(onListen);
+}
+
+// Run the host/manager in a detached process which is called
+// with a similar command + argument combination as this process
+// was. The detached process writes its stdout and stderr to temp
+// files which we watch and look for the expected output before
+// exiting this process
+
+var stdoutFile = tmp.tmpNameSync();
+var stdout = fs.openSync(stdoutFile, 'a');
+
+var stderrFile = tmp.tmpNameSync();
+var stderr = fs.openSync(stderrFile, 'a');
+
+var stdoutTail;
+var stderrTail;
+var detached;
+
+var expectedOutput = JSON.stringify(host.config);
+
+var onOutput = function(output) {
+  output = output.toString().trim();
+  if (output === expectedOutput) {
+    process.stdout.write(output);
+  } else {
+    process.stderr.write(output);
+    detached && detached.kill();
+  }
+  stderrTail && stdoutTail.kill();
+  stderrTail && stderrTail.kill();
+};
+
+stdoutTail = child_process.spawn('tail', ['-f', stdoutFile]);
+stderrTail = child_process.spawn('tail', ['-f', stderrFile]);
+
+stdoutTail.stdout.on('data', onOutput);
+stdoutTail.stderr.on('data', onOutput);
+stderrTail.stdout.on('data', onOutput);
+stderrTail.stderr.on('data', onOutput);
+
+var command = _.first(process.argv);
+var args = _.rest(process.argv);
+args = _.without(args, '-d', '--detached');
+args.push('--json');
+
+detached = child_process.spawn(
+  command,
+  args,
+  {
+    detached: true,
+    stdio: ['ignore', stdout, stderr]
+  }
+);
+
+detached.unref();
