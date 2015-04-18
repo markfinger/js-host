@@ -470,4 +470,30 @@ describe('Manager', function() {
       });
     });
   });
+  describe('/config endpoint', function() {
+    it('can expose a manager\'s config as JSON', function(done) {
+      var manager = new Manager({
+        outputOnListen: false,
+        silent: true,
+        services: [{
+          name: 'foo',
+          handler: function() {}
+        }]
+      });
+      manager.listen(function() {
+        request(manager.getUrl() + '/config', function(err, res, body) {
+          assert.isNull(err);
+          var config = JSON.parse(body);
+          assert.isObject(config);
+          assert.equal(config.address, manager.config.address);
+          assert.equal(config.port, manager.config.port);
+          assert.isArray(config.services);
+          assert.equal(config.services.length, 1);
+          assert.equal(config.services[0].name, 'foo');
+          manager.stopListening();
+          done();
+        });
+      });
+    });
+  });
 });
