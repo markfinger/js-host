@@ -164,7 +164,9 @@ describe('bin/service-host.js', function() {
       request.post(manager.getUrl() + '/start?config=' + encodeURIComponent(pathToTestConfig), function(err, res, body) {
         assert.isNull(err);
         assert.notEqual(body, output);
-        var hostConfig = JSON.parse(body);
+        var hostJson = JSON.parse(body);
+        assert.isTrue(hostJson.started);
+        var hostConfig = JSON.parse(hostJson.output);
         assert.equal(hostConfig.address, '127.0.0.1');
         assert.isNumber(hostConfig.port);
         var host = new Host(_.omit(hostConfig, 'services'));
