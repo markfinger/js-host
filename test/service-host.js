@@ -198,7 +198,7 @@ describe('bin/service-host.js', function() {
       'node', [serviceHost, '/missing/file.js']
     );
 
-    process.stderr.on('data', function(data) {
+    process.stderr.once('data', function(data) {
       var output = data.toString();
       if (!IS_NODE_ZERO_POINT_TEN) {
         assert.include(output, '/missing/file.js');
@@ -212,7 +212,7 @@ describe('bin/service-host.js', function() {
       'node', [serviceHost, pathToEmptyConfig]
     );
 
-    process.stderr.on('data', function(data) {
+    process.stderr.once('data', function(data) {
       var output = data.toString();
       if (!IS_NODE_ZERO_POINT_TEN) {
         assert.include(output, 'Config file does not export an object');
