@@ -15,6 +15,7 @@ var pathToTestConfig = path.join(__dirname, 'test_config', 'config.js');
 var pathToEmptyConfig = path.join(__dirname, 'test_config', 'empty.js');
 
 var NODE_VERSION = Number(process.version.match(/^v(\d+\.\d+)/)[1]);
+console.log('VERSION', process.version, NODE_VERSION);
 
 describe('bin/service-host.js', function() {
   it('can read in a config and start a properly configured host', function(done) {
