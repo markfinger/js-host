@@ -47,7 +47,7 @@ if (!absolutePath(configFile )) {
 
 var config = require(configFile);
 
-if (!_.isObject(config)) {
+if (!_.isObject(config) || _.isEqual({}, config)) {
   throw Error('Config file does not export an object. "' + configFile + '"');
 }
 

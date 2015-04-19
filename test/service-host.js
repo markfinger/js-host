@@ -12,6 +12,7 @@ var serviceHost = path.join(__dirname, '..', 'bin', 'service-host.js');
 var post = require('./utils').post;
 
 var pathToTestConfig = path.join(__dirname, 'test_config', 'config.js');
+var pathToEmptyConfig = path.join(__dirname, 'test_config', 'empty.js');
 
 describe('bin/service-host.js', function() {
   it('can read in a config and start a properly configured host', function(done) {
@@ -186,6 +187,31 @@ describe('bin/service-host.js', function() {
           });
         });
       });
+    });
+  });
+  it('throws an error if a config file does not exist', function(done) {
+    var process = child_process.spawn(
+      'node', [serviceHost, '/missing/file.js']
+    );
+
+    process.stderr.on('data', function(data) {
+      var output = data.toString();
+      assert.include(output, '/missing/file.js');
+      process.kill();
+      done();
+    });
+  });
+  it('throws an error if a config file does not export an object', function(done) {
+    var process = child_process.spawn(
+      'node', [serviceHost, pathToEmptyConfig]
+    );
+
+    process.stderr.on('data', function(data) {
+      var output = data.toString();
+      assert.include(output, 'Config file does not export an object');
+      assert.include(output, pathToEmptyConfig);
+      process.kill();
+      done();
     });
   });
 });
