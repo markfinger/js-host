@@ -39,13 +39,17 @@ var _ = require('lodash');
 var Host = require('../lib/Host');
 var Manager = require('../lib/Manager');
 
-var config = argv._[0];
+var configFile = argv._[0];
 
-if (!absolutePath(config)) {
-  config = path.join(process.cwd(), config);
+if (!absolutePath(configFile )) {
+  configFile = path.join(process.cwd(), configFile);
 }
 
-config = require(config);
+var config = require(configFile);
+
+if (!_.isObject(config)) {
+  throw Error('Config file does not export an object. "' + configFile + '"');
+}
 
 var runAsDetachedProcess = false;
 if (argv.detached) {
