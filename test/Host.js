@@ -38,6 +38,50 @@ describe('Host', function() {
       );
     });
   });
+  describe('#config', function() {
+    it('should accept a variety of notations for services', function() {
+      var services1 = [
+        {
+          name: 'foo',
+          handler: function() {}
+        }, {
+          name: 'bar',
+          handler: function() {}
+        }
+      ];
+
+      var services2 = {
+        foo: function(){},
+        bar: function(){}
+      };
+
+      var services3 = {
+        foo: {
+          handler: function(){}
+        },
+        bar: {
+          handler: function(){}
+        }
+      };
+
+      var services4 = {
+        foo: function(){},
+        bar: {
+          handler: function(){}
+        }
+      };
+
+      [services1, services2, services3, services4].forEach(function(services) {
+        var host = new Host({services: services});
+        assert.isArray(host.config.services);
+        assert.equal(host.config.services.length, 2);
+        assert.equal(host.config.services[0].name, 'foo');
+        assert.isFunction(host.config.services[0].handler);
+        assert.equal(host.config.services[1].name, 'bar');
+        assert.isFunction(host.config.services[1].handler);
+      });
+    });
+  });
   describe('#addService()', function() {
     it('should accept an object', function() {
       var host = new Host({silent: true});
@@ -212,10 +256,9 @@ describe('Host', function() {
       var host = new Host({
         outputOnListen: false,
         silent: true,
-        services: [{
-          name: 'foo',
-          handler: function() {}
-        }]
+        services: {
+          foo: function() {}
+        }
       });
       host.listen(function() {
         request(host.getUrl() + '/config', function(err, res, body) {

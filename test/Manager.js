@@ -82,7 +82,7 @@ describe('Manager', function() {
           assert.isTrue(host.started);
           var config = JSON.parse(host.output);
           assert.isArray(config.services);
-          assert.equal(config.services.length, testConfig.services.length);
+          assert.equal(config.services.length, Object.keys(testConfig.services).length);
           assert.notEqual(config.port, testConfig.port);
           post({port: config.port}, 'echo', {data: {'echo': 'test'}}, function(err, res, body) {
             assert.isNull(err);
@@ -335,7 +335,7 @@ describe('Manager', function() {
                 assert.isUndefined(manager.hosts[pathToTestConfig]);
                 var config = JSON.parse(body);
                 assert.isArray(config.services);
-                assert.equal(config.services.length, testConfig.services.length);
+                assert.equal(config.services.length, Object.keys(testConfig.services).length);
                 assert.notEqual(config.port, testConfig.port);
                 setTimeout(function() {
                   post({port: config.port}, 'echo', {data: {echo: 'test'}}, function(err, res, body) {
