@@ -208,7 +208,7 @@ describe('bin/service-host.js', function() {
 
     process.stderr.on('data', function(data) {
       var output = data.toString();
-      if (_.startsWith(process.version, 'v0.10')) { // Node 0.10.x seems to have patchy error reporting
+      if (!_.startsWith(process.version, 'v0.10')) { // Node 0.10.x seems to have patchy error reporting
         assert.include(output, 'Config file does not export an object');
         assert.include(output, pathToEmptyConfig);
       }
