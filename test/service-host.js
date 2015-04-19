@@ -29,7 +29,7 @@ describe('bin/service-host.js', function() {
     );
 
     // Wait for stdout, which should indicate the server's running
-    process.stdout.on('data', function(data) {
+    process.stdout.once('data', function(data) {
       assert.equal(data.toString(), 'Host listening at 127.0.0.1:8000\n');
       post(host, 'echo', {data: {echo: 'echo-test'}}, function(err, res, body) {
         assert.equal(body, 'echo-test');
@@ -77,7 +77,7 @@ describe('bin/service-host.js', function() {
     });
 
     // Wait for stdout, which should indicate the server's running
-    process.stdout.on('data', function(data) {
+    process.stdout.once('data', function(data) {
       assert.equal(data.toString(), 'Host listening at 127.0.0.1:8000\n');
       post(host, 'error', function(err, res, body) {
         assert.equal(res.statusCode, 500);
@@ -111,7 +111,7 @@ describe('bin/service-host.js', function() {
       'node', [serviceHost, pathToTestConfig, '--json']
     );
 
-    process.stdout.on('data', function(data) {
+    process.stdout.once('data', function(data) {
       var config = JSON.parse(data.toString());
       assert.equal(config.address, '127.0.0.1');
       assert.equal(config.port, 8000);
@@ -131,7 +131,7 @@ describe('bin/service-host.js', function() {
 
     assert.equal(testConfig.port, 8000);
 
-    process.stdout.on('data', function(data) {
+    process.stdout.once('data', function(data) {
       var config = JSON.parse(data.toString());
       assert.equal(config.address, '127.0.0.1');
       assert.equal(config.port, '8080');
@@ -161,7 +161,7 @@ describe('bin/service-host.js', function() {
       'node', [serviceHost, pathToTestConfig, '--manager', '--json']
     );
 
-    process.stdout.on('data', function(data) {
+    process.stdout.once('data', function(data) {
       var output = data.toString();
       var config = JSON.parse(output);
       config.services = null;
