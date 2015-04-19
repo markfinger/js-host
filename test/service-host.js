@@ -14,8 +14,9 @@ var post = require('./utils').post;
 var pathToTestConfig = path.join(__dirname, 'test_config', 'config.js');
 var pathToEmptyConfig = path.join(__dirname, 'test_config', 'empty.js');
 
-var NODE_VERSION = Number(process.version.match(/^v(\d+\.\d+)/)[1]);
-console.log('VERSION', process.version, NODE_VERSION, _.startsWith(process.version, 'v0.10'));
+// Node 0.10.x seems to have provide few details when reporting errors across processes,
+// so we need to shim around it and assume behaviour
+var IS_NODE_ZERO_POINT_TEN = _.startsWith(process.version, 'v0.10');
 
 describe('bin/service-host.js', function() {
   it('can read in a config and start a properly configured host', function(done) {
@@ -199,7 +200,7 @@ describe('bin/service-host.js', function() {
 
     process.stderr.on('data', function(data) {
       var output = data.toString();
-      if (NODE_VERSION !== 0.10) { // Node 0.10.x seems to have patchy error reporting
+      if (!IS_NODE_ZERO_POINT_TEN) {
         assert.include(output, '/missing/file.js');
       }
       process.kill();
@@ -213,7 +214,7 @@ describe('bin/service-host.js', function() {
 
     process.stderr.on('data', function(data) {
       var output = data.toString();
-      if (NODE_VERSION !== 0.10) { // Node 0.10.x seems to have patchy error reporting
+      if (!IS_NODE_ZERO_POINT_TEN) {
         assert.include(output, 'Config file does not export an object');
         assert.include(output, pathToEmptyConfig);
       }
