@@ -14,6 +14,8 @@ var post = require('./utils').post;
 var pathToTestConfig = path.join(__dirname, 'test_config', 'config.js');
 var pathToEmptyConfig = path.join(__dirname, 'test_config', 'empty.js');
 
+var NODE_VERSION = Number(process.version.match(/^v(\d+\.\d+)/)[1]);
+
 describe('bin/service-host.js', function() {
   it('can read in a config and start a properly configured host', function(done) {
     var process = child_process.spawn(
@@ -196,7 +198,9 @@ describe('bin/service-host.js', function() {
 
     process.stderr.on('data', function(data) {
       var output = data.toString();
-      assert.include(output, '/missing/file.js');
+      if (NODE_VERSION !== 0.10) { // Node 0.10.x seems to have patchy error reporting
+        assert.include(output, '/missing/file.js');
+      }
       process.kill();
       done();
     });
@@ -208,7 +212,7 @@ describe('bin/service-host.js', function() {
 
     process.stderr.on('data', function(data) {
       var output = data.toString();
-      if (!_.startsWith(process.version, 'v0.10')) { // Node 0.10.x seems to have patchy error reporting
+      if (NODE_VERSION !== 0.10) { // Node 0.10.x seems to have patchy error reporting
         assert.include(output, 'Config file does not export an object');
         assert.include(output, pathToEmptyConfig);
       }
