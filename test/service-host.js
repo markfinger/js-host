@@ -32,13 +32,16 @@ describe('bin/service-host.js', function() {
     process.stdout.once('data', function(data) {
       assert.equal(data.toString(), 'Host listening at 127.0.0.1:8000\n');
       post(host, 'echo', {data: {echo: 'echo-test'}}, function(err, res, body) {
+        assert.isNull(err);
         assert.equal(body, 'echo-test');
         post(host, 'echo-async', function(err, res, body) {
           assert.equal(res.statusCode, 500);
           assert.include(body, '`echo` data not provided');
           post(host, 'echo-async', {data: {echo: 'echo-async-test'}}, function(err, res, body) {
+            assert.isNull(err);
             assert.equal(body, 'echo-async-test');
             post(host, 'echo-async', function(err, res, body) {
+              assert.isNull(err);
               assert.equal(res.statusCode, 500);
               assert.include(body, '`echo` data not provided');
               process.kill();

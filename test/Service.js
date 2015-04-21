@@ -188,5 +188,83 @@ describe('Service', function() {
       });
       assert.equal(service.pending['test-key-2'].length, 1);
     });
+    it('should convert all service output to strings', function(done) {
+      var object = new Service({
+        name: 'test',
+        handler: function(data, done) {
+          done(null, {foo: [20]});
+        },
+        cacheTimeout: null
+      });
+
+      var number = new Service({
+        name: 'test',
+        handler: function(data, done) {
+          done(null, 10);
+        },
+        cacheTimeout: null
+      });
+
+      object.call({}, function(err, output) {
+        assert.isNull(err);
+        assert.equal(output, JSON.stringify({foo: [20]}));
+        number.call({}, function(err, output) {
+          assert.isNull(err);
+          assert.equal(output, '10');
+          done();
+        });
+      });
+    });
+    it('should produce errors if the output is falsey', function(done) {
+      var _null = new Service({
+        name: 'test',
+        handler: function(data, done) {
+          done(null, null);
+        },
+        cacheTimeout: null
+      });
+
+      var _undefined = new Service({
+        name: 'test',
+        handler: function(data, done) {
+          done();
+        },
+        cacheTimeout: null
+      });
+
+      var _false = new Service({
+        name: 'test',
+        handler: function(data, done) {
+          done();
+        },
+        cacheTimeout: null
+      });
+
+      var emptyString = new Service({
+        name: 'test',
+        handler: function(data, done) {
+          done();
+        },
+        cacheTimeout: null
+      });
+
+      _null.call({}, function(err, output) {
+        assert.instanceOf(err, Error);
+        assert.isUndefined(output);
+        _undefined.call({}, function(err, output) {
+          assert.instanceOf(err, Error);
+          assert.isUndefined(output);
+          _false.call({}, function(err, output) {
+            assert.instanceOf(err, Error);
+            assert.isUndefined(output);
+            emptyString.call({}, function(err, output) {
+              assert.instanceOf(err, Error);
+              assert.isUndefined(output);
+              done();
+            });
+          });
+        });
+      });
+    });
   });
 });
