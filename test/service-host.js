@@ -196,6 +196,51 @@ describe('bin/service-host.js', function() {
       });
     });
   });
+  it('can have a manager process automatically exit once it\'s last host has stopped', function(done) {
+    var process = child_process.spawn(
+      'node', [serviceHost, pathToTestConfig, '--manager', '--json']
+    );
+
+    var hasExited = false;
+    process.once('exit', function() {
+      hasExited = true;
+    });
+
+    process.stdout.once('data', function(data) {
+      var output = data.toString();
+      var config = JSON.parse(output);
+      config.services = null;
+      var manager = new Manager(config);
+      request.post(manager.getUrl() + '/start?config=' + encodeURIComponent(pathToTestConfig), function(err, res, body) {
+        assert.isNull(err);
+        assert.notEqual(body, output);
+        var hostJson = JSON.parse(body);
+        assert.isTrue(hostJson.started);
+        var hostConfig = JSON.parse(hostJson.output);
+        assert.equal(hostConfig.address, '127.0.0.1');
+        assert.isNumber(hostConfig.port);
+        var host = new Host(_.omit(hostConfig, 'services'));
+        post(host, 'echo', {data: {echo: 'test'}}, function(err, res, body) {
+          assert.isNull(err);
+          assert.equal(body, 'test');
+          request.post(manager.getUrl() + '/stop?stop-manager-if-last-host&config=' + encodeURIComponent(pathToTestConfig), function(err, res, body) {
+            assert.isNull(err);
+            assert.deepEqual(JSON.parse(body), hostConfig);
+            setTimeout(function() {
+              post(host, 'echo', {data: {echo: 'test'}}, function(err, res, body) {
+                assert.instanceOf(err, Error);
+                request.post(manager.getUrl() + '/config', function(err, res, body) {
+                  assert.instanceOf(err, Error);
+                  assert.isTrue(hasExited);
+                  done();
+                });
+              });
+            }, 50);
+          });
+        });
+      });
+    });
+  });
   it('throws an error if a config file does not exist', function(done) {
     var process = child_process.spawn(
       'node', [serviceHost, '/missing/file.js']
