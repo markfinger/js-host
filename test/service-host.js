@@ -202,9 +202,11 @@ describe('bin/service-host.js', function() {
       'node', [serviceHost, pathToTestConfig, '--manager', '--json']
     );
     console.log(2);
+    var testFinished = false;
     var hasExited = false;
     process.once('exit', function() {
       hasExited = true;
+      if (hasExited && testFinished) done();
     });
     console.log(3);
     process.stdout.once('data', function(data) {
@@ -234,7 +236,7 @@ describe('bin/service-host.js', function() {
             assert.isNull(err);
             assert.deepEqual(JSON.parse(body), hostConfig);
             console.log(10);
-            setTimeout(function() {
+            _.defer(function() {
               console.log(11);
               post(host, 'echo', {data: {echo: 'test'}}, function(err, res, body) {
                 console.log(12);
@@ -243,12 +245,14 @@ describe('bin/service-host.js', function() {
                 request.post(manager.getUrl() + '/config', function(err, res, body) {
                   console.log(14);
                   assert.instanceOf(err, Error);
-                  assert.isTrue(hasExited);
+                  //assert.isTrue(hasExited);
                   console.log(15);
-                  done();
+                  testFinished = true;
+                  if (hasExited && testFinished) done();
                 });
               });
-            }, 50);
+            });
+            console.log(10.1);
           });
         });
       });
