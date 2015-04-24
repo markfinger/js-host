@@ -197,21 +197,24 @@ describe('bin/service-host.js', function() {
     });
   });
   it('can have a manager process automatically exit once it\'s last host has stopped', function(done) {
+    console.log(1);
     var process = child_process.spawn(
       'node', [serviceHost, pathToTestConfig, '--manager', '--json']
     );
-
+    console.log(2);
     var hasExited = false;
     process.once('exit', function() {
       hasExited = true;
     });
-
+    console.log(3);
     process.stdout.once('data', function(data) {
+      console.log(4);
       var output = data.toString();
       var config = JSON.parse(output);
       config.services = null;
       var manager = new Manager(config);
       request.post(manager.getUrl() + '/start?config=' + encodeURIComponent(pathToTestConfig), function(err, res, body) {
+        console.log(5);
         assert.isNull(err);
         assert.notEqual(body, output);
         var hostJson = JSON.parse(body);
@@ -220,18 +223,28 @@ describe('bin/service-host.js', function() {
         assert.equal(hostConfig.address, '127.0.0.1');
         assert.isNumber(hostConfig.port);
         var host = new Host(_.omit(hostConfig, 'services'));
+        console.log(6);
         post(host, 'echo', {data: {echo: 'test'}}, function(err, res, body) {
+          console.log(7);
           assert.isNull(err);
           assert.equal(body, 'test');
+          console.log(8);
           request.post(manager.getUrl() + '/stop?stop-manager-if-last-host&config=' + encodeURIComponent(pathToTestConfig), function(err, res, body) {
+            console.log(9);
             assert.isNull(err);
             assert.deepEqual(JSON.parse(body), hostConfig);
+            console.log(10);
             setTimeout(function() {
+              console.log(11);
               post(host, 'echo', {data: {echo: 'test'}}, function(err, res, body) {
+                console.log(12);
                 assert.instanceOf(err, Error);
+                console.log(13);
                 request.post(manager.getUrl() + '/config', function(err, res, body) {
+                  console.log(14);
                   assert.instanceOf(err, Error);
                   assert.isTrue(hasExited);
+                  console.log(15);
                   done();
                 });
               });
