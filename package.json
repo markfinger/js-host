@@ -1,7 +1,7 @@
 {
   "name": "service-host",
   "version": "0.2.0",
-  "description": "JS service host",
+  "description": "Configurable JavaScript host",
   "author": "Mark Finger <markfinger@gmail.com>",
   "license": "MIT",
   "bin": {
