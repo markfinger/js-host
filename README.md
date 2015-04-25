@@ -27,7 +27,7 @@ module.exports = {
       if (err) return cb(new Error('Something bad occurred'));
       
       // Send a success response with data
-      cb(null, output);
+      cb(null, {message: 'hello'});
     }
   }
 });
@@ -71,6 +71,77 @@ Config objects may possess the following attributes:
 `services`: an key/value object with service names as keys and functions as values. Alternatively, values may be objects which provide the service's function as a property named `handler`.
 
 
+Services
+--------
+
+Services are functions which accept two arguments, `data` and `cb`.
+
+`data` is the deserialized body of the incoming request.
+
+`cb` is a function which should be called once the service has completed. The function
+will assume that the first argument indicates an error, and the second argument indicates 
+success.
+
+### Handling errors
+
+Generally, you should try to avoid throwing errors during a request. Rather, try/catch
+any potentially dangerous code and pass the caught error to the `cb` as the first argument.
+For example:
+
+```javascript
+try {
+  // Dangerous code
+  // ...
+} catch(err) {
+  return cb(err);
+}
+```
+
+### Handling success
+
+Once your service has completed successfully, you should pass a value to `cb` as the 
+second argument. For example:
+
+```javascript
+cb(null, {status: 'success'});
+```
+
+The success object can be of any type, but beware that it will either by serialized to JSON
+or corced to a string.
+
+### Accessing the host from a service
+
+Services have access to the host via `this.host`. For example:
+
+```javascript
+// To write to the host's logs from a service
+
+function(data, cb) {
+  this.host.logger.log('Some message');
+  this.host.logger.warn('Some warning');
+  this.host.logger.error('Some error');
+};
+```
+
+If you want to access the host from another function, you need to bind the `this` value to
+the function calls. For example:
+
+```javascript
+// The service
+function(data, cb) {
+  logSomething.call(this, data);
+}
+
+// Another function
+function logSomething(data) {
+  this.host.logger.info('So much data...', data);
+}
+```
+
+Note: the `this` binding of a service is generated per-request. Values added to the `this` 
+object are not passed to other requests.
+
+
 Calling the services
 --------------------
 
@@ -92,3 +163,6 @@ blocked until the first has resolved.
 
 If a `cache-key` param is provided and the service provides a success response, all 
 subsequent requests will resolve to the same output until the output has expired.
+
+If a `cache-key` param is provided and the service provides an error response, all 
+concurrent requests will receive the error. Note: errors responses are not cached.
