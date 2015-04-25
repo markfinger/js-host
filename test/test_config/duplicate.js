@@ -2,8 +2,14 @@ module.exports = {
   port: 8000,
   silent: true,
   services: {
-    echo: require('../test_services/echo'),
-    echo_async: require('../test_services/echo_async'),
-    error: require('../test_services/error')
+    echo: require('../test_functions/echo'),
+    echo_async: require('../test_functions/echo_async'),
+    error: require('../test_functions/error')
+  },
+  logger: {
+    log: function() {},
+    info: function() {},
+    warn: function() {},
+    error: function() {}
   }
 };

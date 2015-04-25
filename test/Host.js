@@ -7,7 +7,7 @@ var request = require('request');
 var _ = require('lodash');
 var Service = require('../lib/Service');
 var Host = require('../lib/Host');
-var echo = require('./test_services/echo');
+var echo = require('./test_functions/echo');
 
 var post = require('./utils').post;
 

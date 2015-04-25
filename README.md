@@ -1,7 +1,7 @@
-service-host
+js-host
 ============
 
-[![Build Status](https://travis-ci.org/markfinger/service-host.svg?branch=master)](https://travis-ci.org/markfinger/service-host)
+[![Build Status](https://travis-ci.org/markfinger/js-host.svg?branch=master)](https://travis-ci.org/markfinger/js-host)
 
 Provides a configurable JavaScript host which exposes functions to network requests. Intended 
 to provide the low-level bindings for other languages to access a JavaScript environment.
@@ -17,20 +17,20 @@ Installation
 ------------
 
 ```
-npm install service-host
+npm install js-host
 ```
 
 
 Basic usage
 -----------
 
-Create a file `services.config.js` with configuration for the host. For example:
+Create a file `host.config.js` which will contain the configuration for the host. For example:
 
 ```javascript
 module.exports = {
   port: 9009,
-  services: {
-    some_service: function(data, cb) {
+  functions: {
+    hello_world: function(data, cb) {
       cb(null, 'Hello, World!');
     }
   }
@@ -40,10 +40,10 @@ module.exports = {
 Start the host with:
 
 ```
-node_modules/.bin/service-host services.config.js
+node_modules/.bin/js-host host.config.js
 ```
 
-And call the `some_service` service by sending a POST request to `http://127.0.0.1:9009/service/some_service`.
+And call `hello_world` by sending a POST request to `http://127.0.0.1:9009/service/hello_world`.
 
 
 Services

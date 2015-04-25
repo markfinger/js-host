@@ -1,21 +1,21 @@
 {
-  "name": "service-host",
+  "name": "js-host",
   "version": "0.3.0",
   "description": "Configurable JavaScript host",
   "author": "Mark Finger <markfinger@gmail.com>",
   "license": "MIT",
   "bin": {
-    "service-host": "bin/service-host.js"
+    "service-host": "bin/js-host.js"
   },
   "main": "lib/Host.js",
   "repository": {
     "type": "git",
-    "url": "https://github.com/markfinger/service-host.git"
+    "url": "https://github.com/markfinger/js-host.git"
   },
   "bugs": {
-    "url": "https://github.com/markfinger/service-host/issues"
+    "url": "https://github.com/markfinger/js-host/issues"
   },
-  "homepage": "https://github.com/markfinger/service-host",
+  "homepage": "https://github.com/markfinger/js-host",
   "dependencies": {
     "absolute-path": "0.0.0",
     "body-parser": "^1.12.2",

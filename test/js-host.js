@@ -8,20 +8,20 @@ var spawnSync = require('spawn-sync'); // node 0.10.x support
 var request = require('request');
 var Host = require('..');
 var Manager = require('../lib/Manager');
-var serviceHost = path.join(__dirname, '..', 'bin', 'service-host.js');
 var post = require('./utils').post;
 
+var pathToBin = path.join(__dirname, '..', 'bin', 'js-host.js');
 var pathToTestConfig = path.join(__dirname, 'test_config', 'config.js');
 var pathToEmptyConfig = path.join(__dirname, 'test_config', 'empty.js');
 
-// Node 0.10.x seems to have provide few details when reporting errors across processes,
-// so we need to shim around it and assume behaviour
-var IS_NODE_ZERO_POINT_TEN = _.startsWith(process.version, 'v0.10');
+// Node 0.10.x seems to provide few details when reporting errors across processes,
+// so we need to assume less helpful behaviour when testing it
+var IS_NODE_ZERO_TEN = _.startsWith(process.version, 'v0.10');
 
-describe('bin/service-host.js', function() {
+describe('bin/js-host.js', function() {
   it('can read in a config and start a properly configured host', function(done) {
     var process = child_process.spawn(
-      'node', [serviceHost, pathToTestConfig]
+      'node', [pathToBin, pathToTestConfig]
     );
 
     var host = new Host(
@@ -34,13 +34,13 @@ describe('bin/service-host.js', function() {
       post(host, 'echo', {data: {echo: 'echo-test'}}, function(err, res, body) {
         assert.isNull(err);
         assert.equal(body, 'echo-test');
-        post(host, 'echo-async', function(err, res, body) {
+        post(host, 'echo_async', function(err, res, body) {
           assert.equal(res.statusCode, 500);
           assert.include(body, '`echo` data not provided');
-          post(host, 'echo-async', {data: {echo: 'echo-async-test'}}, function(err, res, body) {
+          post(host, 'echo_async', {data: {echo: 'echo_async-test'}}, function(err, res, body) {
             assert.isNull(err);
-            assert.equal(body, 'echo-async-test');
-            post(host, 'echo-async', function(err, res, body) {
+            assert.equal(body, 'echo_async-test');
+            post(host, 'echo_async', function(err, res, body) {
               assert.isNull(err);
               assert.equal(res.statusCode, 500);
               assert.include(body, '`echo` data not provided');
@@ -66,7 +66,7 @@ describe('bin/service-host.js', function() {
   });
   it('an error thrown in a service will not take down the process', function(done) {
     var process = child_process.spawn(
-      'node', [serviceHost, pathToTestConfig]
+      'node', [pathToBin, pathToTestConfig]
     );
 
     var host = new Host(
@@ -96,7 +96,7 @@ describe('bin/service-host.js', function() {
   });
   it('can output the complete config of a host', function() {
     var output = spawnSync(
-      'node', [serviceHost, pathToTestConfig, '--config']
+      'node', [pathToBin, pathToTestConfig, '--config']
     );
 
     var config = JSON.parse(output.stdout.toString());
@@ -111,7 +111,7 @@ describe('bin/service-host.js', function() {
   });
   it('can start listening and output the config as JSON', function(done) {
     var process = child_process.spawn(
-      'node', [serviceHost, pathToTestConfig, '--json']
+      'node', [pathToBin, pathToTestConfig, '--json']
     );
 
     process.stdout.once('data', function(data) {
@@ -127,7 +127,7 @@ describe('bin/service-host.js', function() {
   });
   it('can override the config\'s port when starting a host', function(done) {
     var process = child_process.spawn(
-      'node', [serviceHost, pathToTestConfig, '--port', '8080', '--json']
+      'node', [pathToBin, pathToTestConfig, '--port', '8080', '--json']
     );
 
     var testConfig = require(pathToTestConfig);
@@ -161,7 +161,7 @@ describe('bin/service-host.js', function() {
   });
   it('can start a manager process which can start/stop hosts', function(done) {
     var process = child_process.spawn(
-      'node', [serviceHost, pathToTestConfig, '--manager', '--json']
+      'node', [pathToBin, pathToTestConfig, '--manager', '--json']
     );
 
     process.stdout.once('data', function(data) {
@@ -198,7 +198,7 @@ describe('bin/service-host.js', function() {
   });
   it('can have a manager process automatically exit once it\'s last host has stopped', function(done) {
     var process = child_process.spawn(
-      'node', [serviceHost, pathToTestConfig, '--manager', '--json']
+      'node', [pathToBin, pathToTestConfig, '--manager', '--json']
     );
 
     var hasExited = false;
@@ -243,12 +243,12 @@ describe('bin/service-host.js', function() {
   });
   it('throws an error if a config file does not exist', function(done) {
     var process = child_process.spawn(
-      'node', [serviceHost, '/missing/file.js']
+      'node', [pathToBin, '/missing/file.js']
     );
 
     process.stderr.once('data', function(data) {
       var output = data.toString();
-      if (!IS_NODE_ZERO_POINT_TEN) {
+      if (!IS_NODE_ZERO_TEN) {
         assert.include(output, '/missing/file.js');
       }
       process.kill();
@@ -257,12 +257,12 @@ describe('bin/service-host.js', function() {
   });
   it('throws an error if a config file does not export an object', function(done) {
     var process = child_process.spawn(
-      'node', [serviceHost, pathToEmptyConfig]
+      'node', [pathToBin, pathToEmptyConfig]
     );
 
     process.stderr.once('data', function(data) {
       var output = data.toString();
-      if (!IS_NODE_ZERO_POINT_TEN) {
+      if (!IS_NODE_ZERO_TEN) {
         assert.include(output, 'Config file does not export an object');
         assert.include(output, pathToEmptyConfig);
       }
