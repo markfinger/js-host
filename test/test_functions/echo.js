@@ -1,6 +1,6 @@
-module.exports = function(data, done) {
+module.exports = function(data, cb) {
   if (data.echo === undefined) {
-    return done('`echo` data not provided');
+    return cb('`echo` data not provided');
   }
-  done(null, data.echo);
+  cb(null, data.echo);
 };

@@ -64,7 +64,7 @@ describe('bin/js-host.js', function() {
       }
     });
   });
-  it('an error thrown in a service will not take down the process', function(done) {
+  it('an error thrown in a function will not take down the process', function(done) {
     var process = child_process.spawn(
       'node', [pathToBin, pathToTestConfig]
     );
@@ -84,11 +84,11 @@ describe('bin/js-host.js', function() {
       assert.equal(data.toString(), 'Host listening at 127.0.0.1:8000\n');
       post(host, 'error', function(err, res, body) {
         assert.equal(res.statusCode, 500);
-        assert.include(body, 'Error: Error service');
+        assert.include(body, 'Error: Error function');
         post(host, 'echo', {data: {echo: 'echo-test'}}, function(err, res, body) {
           assert.equal(body, 'echo-test');
           process.kill();
-          assert.include(stderr, 'Error: Error service');
+          assert.include(stderr, 'Error: Error function');
           done();
         });
       });
@@ -105,8 +105,8 @@ describe('bin/js-host.js', function() {
 
     assert.equal(config.address, '127.0.0.1');
     assert.equal(config.port, 8000);
-    assert.isArray(config.services);
-    assert.equal(config.services.length, 3);
+    assert.isArray(config.functions);
+    assert.equal(config.functions.length, 3);
     assert.isTrue(config.silent);
   });
   it('can start listening and output the config as JSON', function(done) {
@@ -118,8 +118,8 @@ describe('bin/js-host.js', function() {
       var config = JSON.parse(data.toString());
       assert.equal(config.address, '127.0.0.1');
       assert.equal(config.port, 8000);
-      assert.isArray(config.services);
-      assert.equal(config.services.length, 3);
+      assert.isArray(config.functions);
+      assert.equal(config.functions.length, 3);
       assert.isTrue(config.silent);
       process.kill();
       done();
@@ -143,8 +143,8 @@ describe('bin/js-host.js', function() {
         '' + config.port,
         '' + testConfig.port
       );
-      assert.isArray(config.services);
-      assert.equal(config.services.length, 3);
+      assert.isArray(config.functions);
+      assert.equal(config.functions.length, 3);
       assert.isTrue(config.silent);
       var host = new Host({
         silent: true,
@@ -167,7 +167,7 @@ describe('bin/js-host.js', function() {
     process.stdout.once('data', function(data) {
       var output = data.toString();
       var config = JSON.parse(output);
-      config.services = null;
+      config.functions = null;
       var manager = new Manager(config);
       request.post(manager.getUrl() + '/start?config=' + encodeURIComponent(pathToTestConfig), function(err, res, body) {
         assert.isNull(err);
@@ -177,7 +177,7 @@ describe('bin/js-host.js', function() {
         var hostConfig = JSON.parse(hostJson.output);
         assert.equal(hostConfig.address, '127.0.0.1');
         assert.isNumber(hostConfig.port);
-        var host = new Host(_.omit(hostConfig, 'services'));
+        var host = new Host(_.omit(hostConfig, 'functions'));
         post(host, 'echo', {data: {echo: 'test'}}, function(err, res, body) {
           assert.isNull(err);
           assert.equal(body, 'test');
@@ -209,7 +209,7 @@ describe('bin/js-host.js', function() {
     process.stdout.once('data', function(data) {
       var output = data.toString();
       var config = JSON.parse(output);
-      config.services = null;
+      config.functions = null;
       var manager = new Manager(config);
       request.post(manager.getUrl() + '/start?config=' + encodeURIComponent(pathToTestConfig), function(err, res, body) {
         assert.isNull(err);
@@ -219,7 +219,7 @@ describe('bin/js-host.js', function() {
         var hostConfig = JSON.parse(hostJson.output);
         assert.equal(hostConfig.address, '127.0.0.1');
         assert.isNumber(hostConfig.port);
-        var host = new Host(_.omit(hostConfig, 'services'));
+        var host = new Host(_.omit(hostConfig, 'functions'));
         post(host, 'echo', {data: {echo: 'test'}}, function(err, res, body) {
           assert.isNull(err);
           assert.equal(body, 'test');

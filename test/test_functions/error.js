@@ -1,3 +1,3 @@
 module.exports = function() {
-  throw new Error('Error service');
+  throw new Error('Error function');
 };

@@ -11,13 +11,13 @@ var utils = require('./utils');
 var pathToTestConfig = path.join(__dirname, 'test_config', 'config.js');
 var pathToDuplicateConfig = path.join(__dirname, 'test_config', 'duplicate.js');
 
-var post = function(host, serviceName, data, cb) {
+var post = function(host, funcName, data, cb) {
   var config = host.output ? JSON.parse(host.output) : host;
   // Get around validation issues caused by (de)serialization issues
-  config.services = null;
+  config.functions = null;
   // Prevent the logger from adding handlers to the process's emitter
   config.silent = true;
-  utils.post(new Host(config), serviceName, data, cb);
+  utils.post(new Host(config), funcName, data, cb);
 };
 
 describe('Manager', function() {
@@ -81,8 +81,8 @@ describe('Manager', function() {
           var host = JSON.parse(body);
           assert.isTrue(host.started);
           var config = JSON.parse(host.output);
-          assert.isArray(config.services);
-          assert.equal(config.services.length, Object.keys(testConfig.services).length);
+          assert.isArray(config.functions);
+          assert.equal(config.functions.length, Object.keys(testConfig.functions).length);
           assert.notEqual(config.port, testConfig.port);
           post({port: config.port}, 'echo', {data: {'echo': 'test'}}, function(err, res, body) {
             assert.isNull(err);
@@ -334,8 +334,8 @@ describe('Manager', function() {
                 assert.equal(res.statusCode, 200);
                 assert.isUndefined(manager.hosts[pathToTestConfig]);
                 var config = JSON.parse(body);
-                assert.isArray(config.services);
-                assert.equal(config.services.length, Object.keys(testConfig.services).length);
+                assert.isArray(config.functions);
+                assert.equal(config.functions.length, Object.keys(testConfig.functions).length);
                 assert.notEqual(config.port, testConfig.port);
                 setTimeout(function() {
                   post({port: config.port}, 'echo', {data: {echo: 'test'}}, function(err, res, body) {
@@ -368,7 +368,7 @@ describe('Manager', function() {
                 assert.equal(res.statusCode, 200);
                 assert.isObject(manager.hosts[pathToTestConfig]);
                 var config = JSON.parse(body);
-                assert.isArray(config.services);
+                assert.isArray(config.functions);
                 post({port: config.port}, 'echo', {data: {echo: 'test'}}, function(err, res, body) {
                   assert.isNull(err);
                   assert.equal(body, 'test');
@@ -411,7 +411,7 @@ describe('Manager', function() {
                     host = JSON.parse(body);
                     assert.isFalse(host.started);
                     var config = JSON.parse(host.output);
-                    assert.isArray(config.services);
+                    assert.isArray(config.functions);
                     setTimeout(function() {
                       post({port: config.port}, 'echo', {data: {echo: 'test'}}, function(err, res, body) {
                         assert.isNull(err);
@@ -475,7 +475,7 @@ describe('Manager', function() {
       var manager = new Manager({
         outputOnListen: false,
         silent: true,
-        services: [{
+        functions: [{
           name: 'foo',
           handler: function() {}
         }]
@@ -487,9 +487,9 @@ describe('Manager', function() {
           assert.isObject(config);
           assert.equal(config.address, manager.config.address);
           assert.equal(config.port, manager.config.port);
-          assert.isArray(config.services);
-          assert.equal(config.services.length, 1);
-          assert.equal(config.services[0].name, 'foo');
+          assert.isArray(config.functions);
+          assert.equal(config.functions.length, 1);
+          assert.equal(config.functions[0].name, 'foo');
           manager.stopListening();
           done();
         });

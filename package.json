@@ -5,7 +5,7 @@
   "author": "Mark Finger <markfinger@gmail.com>",
   "license": "MIT",
   "bin": {
-    "service-host": "bin/js-host.js"
+    "js-host": "bin/js-host.js"
   },
   "main": "lib/Host.js",
   "repository": {

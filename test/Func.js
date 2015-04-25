@@ -1,12 +1,12 @@
 'use strict';
 
 var assert = require('chai').assert;
-var Service = require('../lib/Service');
+var Func = require('../lib/Func');
 
-describe('Service', function() {
+describe('Func', function() {
   describe('constructor', function() {
     it('should be a function', function() {
-      assert.isFunction(Service);
+      assert.isFunction(Func);
     });
     it('should accept an object and initialise properly', function() {
       var obj = {
@@ -14,97 +14,97 @@ describe('Service', function() {
         handler: function() {},
         cacheTimeout: null
       };
-      var service = new Service(obj);
-      assert.equal(service.name, 'echo');
-      assert.strictEqual(service.handler, obj.handler);
+      var func = new Func(obj);
+      assert.equal(func.name, 'echo');
+      assert.strictEqual(func.handler, obj.handler);
     });
   });
   describe('#name', function() {
     it('should be validated', function() {
-      new Service({
+      new Func({
         name: 'test', handler: function() {}, cacheTimeout: null
       });
       assert.throws(
         function() {
-          new Service({});
+          new Func({});
         },
-        '"undefined" is not a valid service name'
+        '"undefined" is not a valid function name'
       );
       assert.throws(
         function() {
-          new Service({name: undefined});
+          new Func({name: undefined});
         },
-        '"undefined" is not a valid service name'
+        '"undefined" is not a valid function name'
       );
       assert.throws(
         function() {
-          new Service({name: null});
+          new Func({name: null});
         },
-        '"null" is not a valid service name'
+        '"null" is not a valid function name'
       );
       assert.throws(
         function() {
-          new Service({name: false});
+          new Func({name: false});
         },
-        '"false" is not a valid service name'
+        '"false" is not a valid function name'
       );
       assert.throws(
         function() {
-          new Service({name: ''});
+          new Func({name: ''});
         },
-        '"" is not a valid service name'
+        '"" is not a valid function name'
       );
     });
   });
   describe('#handler', function() {
     it('should be validated', function() {
-      new Service({
+      new Func({
         name: 'test', handler: function() {}, cacheTimeout: null
       });
       assert.throws(
         function() {
-          new Service({name: 'test'});
+          new Func({name: 'test'});
         },
-        'Service handlers must be a function'
+        'Function handlers must be functions'
       );
       assert.throws(
         function() {
-          new Service({name: 'test', handler: {}});
+          new Func({name: 'test', handler: {}});
         },
-        'Service handlers must be a function'
+        'Function handlers must be functions'
       );
     });
   });
   describe('#call()', function() {
-    it('the output of services can be cached', function(done) {
-      var service = new Service({
+    it('the output of functions can be cached', function(done) {
+      var func = new Func({
         name: 'test',
-        handler: function(data, done) {
+        handler: function(data, cb) {
           setTimeout(function() {
-            done(null, data.count);
+            cb(null, data.count);
           }, 10);
         },
         cacheTimeout: null
       });
 
-      assert.equal(service.cache.get('test-key'), null);
+      assert.equal(func.cache.get('test-key'), null);
 
-      service.call({count: 1}, 'test-key', function(err, output) {
+      func.call({count: 1}, 'test-key', function(err, output) {
         assert.isNull(err);
         assert.equal(output, 1);
-        assert.equal(service.cache.get('test-key'), 1);
+        assert.equal(func.cache.get('test-key'), 1);
 
-        service.call({count: 2}, 'test-key', function(err, output) {
+        func.call({count: 2}, 'test-key', function(err, output) {
           assert.isNull(err);
           assert.equal(output, 1);
 
-          service.cache.set('test-key', 3);
+          func.cache.set('test-key', 3);
 
-          service.call({count: 4}, 'test-key', function(err, output) {
+          func.call({count: 4}, 'test-key', function(err, output) {
             assert.isNull(err);
             assert.equal(output, 3);
 
-            service.call({count: 4}, 'another-test-key', function(err, output) {
+            func.call({count: 4}, 'another-test-key', function(err, output) {
               assert.isNull(err);
               assert.equal(output, 4);
               done();
@@ -114,11 +114,11 @@ describe('Service', function() {
       });
     });
     it('the handler should be provided with a context', function(done) {
-      var service = new Service({
+      var func = new Func({
         name: 'test',
         host: 'foo host',
         handler: function() {
-          assert.notStrictEqual(this, service);
+          assert.notStrictEqual(this, func);
           assert.notStrictEqual(this, global);
           assert.isObject(this);
           assert.equal(this.name, 'test');
@@ -127,80 +127,80 @@ describe('Service', function() {
         },
         cacheTimeout: null
       });
-      service.call();
+      func.call();
     });
-    it('if a cache key is defined, successive calls to a service will block until the first completes', function(done) {
-      var service = new Service({
+    it('if a cache key is defined, successive calls to a function will block until the first completes', function(done) {
+      var func = new Func({
         name: 'test',
-        handler: function(data, done) {
+        handler: function(data, cb) {
           setTimeout(function() {
-            done(null, data.count);
+            cb(null, data.count);
           }, 25);
         },
         cacheTimeout: null
       });
 
-      assert.equal(service.cache.get('test-key'), null);
-      assert.isUndefined(service.pending['test-key']);
+      assert.equal(func.cache.get('test-key'), null);
+      assert.isUndefined(func.pending['test-key']);
 
-      service.call({count: 1}, 'test-key', function(err, output) {
-        assert.equal(service.pending['test-key'].length, 0);
+      func.call({count: 1}, 'test-key', function(err, output) {
+        assert.equal(func.pending['test-key'].length, 0);
 
         assert.isNull(err);
         assert.equal(output, 1);
-        assert.equal(service.cache.get('test-key'), 1);
+        assert.equal(func.cache.get('test-key'), 1);
       });
-      assert.equal(service.pending['test-key'].length, 1);
+      assert.equal(func.pending['test-key'].length, 1);
 
-      service.call({count: 2}, 'test-key', function(err, output) {
-        assert.equal(service.pending['test-key'].length, 0);
+      func.call({count: 2}, 'test-key', function(err, output) {
+        assert.equal(func.pending['test-key'].length, 0);
 
         assert.isNull(err);
         assert.equal(output, 1);
       });
-      assert.equal(service.pending['test-key'].length, 2);
+      assert.equal(func.pending['test-key'].length, 2);
 
-      service.call({count: 3}, 'test-key', function(err, output) {
-        assert.equal(service.pending['test-key'].length, 0);
+      func.call({count: 3}, 'test-key', function(err, output) {
+        assert.equal(func.pending['test-key'].length, 0);
         assert.isNull(err);
         assert.equal(output, 1);
-        service.call({count: 4}, 'test-key', function(err, output) {
-          assert.equal(service.pending['test-key'].length, 0);
+        func.call({count: 4}, 'test-key', function(err, output) {
+          assert.equal(func.pending['test-key'].length, 0);
           assert.isNull(err);
           assert.equal(output, 1);
 
-          service.cache.clear();
-          service.call({count: 5}, 'test-key', function(err, output) {
+          func.cache.clear();
+          func.call({count: 5}, 'test-key', function(err, output) {
             assert.isNull(err);
             assert.equal(output, 5);
             done();
           });
         });
-        assert.equal(service.pending['test-key'].length, 1);
+        assert.equal(func.pending['test-key'].length, 1);
       });
-      assert.equal(service.pending['test-key'].length, 3);
+      assert.equal(func.pending['test-key'].length, 3);
 
-      assert.isUndefined(service.pending['test-key-2']);
-      service.call({count: 6}, 'test-key-2', function(err, output) {
-        assert.equal(service.pending['test-key-2'].length, 0);
+      assert.isUndefined(func.pending['test-key-2']);
+      func.call({count: 6}, 'test-key-2', function(err, output) {
+        assert.equal(func.pending['test-key-2'].length, 0);
         assert.isNull(err);
         assert.equal(output, 6);
       });
-      assert.equal(service.pending['test-key-2'].length, 1);
+      assert.equal(func.pending['test-key-2'].length, 1);
     });
-    it('should convert all service output to strings', function(done) {
-      var object = new Service({
+    it('should convert all function output to strings', function(done) {
+      var object = new Func({
         name: 'test',
-        handler: function(data, done) {
-          done(null, {foo: [20]});
+        handler: function(data, cb) {
+          cb(null, {foo: [20]});
         },
         cacheTimeout: null
       });
 
-      var number = new Service({
+      var number = new Func({
         name: 'test',
-        handler: function(data, done) {
-          done(null, 10);
+        handler: function(data, cb) {
+          cb(null, 10);
         },
         cacheTimeout: null
       });
@@ -216,34 +216,34 @@ describe('Service', function() {
       });
     });
     it('should produce errors if the output is falsey', function(done) {
-      var _null = new Service({
+      var _null = new Func({
         name: 'test',
-        handler: function(data, done) {
-          done(null, null);
+        handler: function(data, cb) {
+          cb(null, null);
         },
         cacheTimeout: null
       });
 
-      var _undefined = new Service({
+      var _undefined = new Func({
         name: 'test',
-        handler: function(data, done) {
-          done();
+        handler: function(data, cb) {
+          cb(null, undefined);
         },
         cacheTimeout: null
       });
 
-      var _false = new Service({
+      var _false = new Func({
         name: 'test',
-        handler: function(data, done) {
-          done();
+        handler: function(data, cb) {
+          cb(null, false);
         },
         cacheTimeout: null
       });
 
-      var emptyString = new Service({
+      var emptyString = new Func({
         name: 'test',
-        handler: function(data, done) {
-          done();
+        handler: function(data, cb) {
+          cb(null, '');
         },
         cacheTimeout: null
       });

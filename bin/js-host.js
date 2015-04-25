@@ -5,7 +5,7 @@
 var argv = require('yargs')
   .usage('Usage: $0 <file>')
   .demand(1)
-  .example('$0 services.config.js', 'Start a host using the specified config file')
+  .example('$0 host.config.js', 'Start a host using the specified config file')
   .option('p', {
     alias: 'port',
     description: 'Run the host or manager at the specified port'
@@ -24,7 +24,7 @@ var argv = require('yargs')
   })
   .option('d', {
     alias: 'detached',
-    description: 'Run the host or manager in a detached process'
+    description: 'Run in a detached process'
   })
   .help('h').alias('h', 'help')
   .strict()
@@ -109,10 +109,10 @@ var onOutput = function(output) {
     process.stdout.write(output);
   } else {
     process.stderr.write(output);
-    detached && detached.kill();
+    if (detached) detached.kill();
   }
-  stderrTail && stdoutTail.kill();
-  stderrTail && stderrTail.kill();
+  if (stderrTail) stdoutTail.kill();
+  if (stderrTail) stderrTail.kill();
 };
 
 stdoutTail = child_process.spawn('tail', ['-f', stdoutFile]);

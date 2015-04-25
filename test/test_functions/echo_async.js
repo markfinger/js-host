@@ -1,8 +1,8 @@
-module.exports = function(data, done) {
+module.exports = function(data, cb) {
   setTimeout(function() {
     if (data.echo === undefined) {
-      return done(new Error('`echo` data not provided'));
+      return cb(new Error('`echo` data not provided'));
     }
-    done(null, data.echo);
+    cb(null, data.echo);
   }, 25);
 };

@@ -5,7 +5,7 @@ var fs = require('fs');
 var assert = require('chai').assert;
 var request = require('request');
 var _ = require('lodash');
-var Service = require('../lib/Service');
+var Func = require('../lib/Func');
 var Host = require('../lib/Host');
 var echo = require('./test_functions/echo');
 
@@ -20,12 +20,12 @@ describe('Host', function() {
       var host = new Host({silent: true});
       assert.isObject(host.config);
       assert.notStrictEqual(host.config, host.defaultConfig);
-      assert.isObject(host.services);
+      assert.isObject(host.functions);
       assert.deepEqual(
         _.omit(host.config, 'silent'),
         _.omit(host.defaultConfig, 'silent')
       );
-      assert.deepEqual(host.services, Object.create(null));
+      assert.deepEqual(host.functions, Object.create(null));
     });
     it('the constructor should accept a config', function() {
       var config = {silent: true};
@@ -39,8 +39,8 @@ describe('Host', function() {
     });
   });
   describe('#config', function() {
-    it('should accept a variety of notations for services', function() {
-      var services1 = [
+    it('should accept a variety of notations for functions', function() {
+      var funcs1 = [
         {
           name: 'foo',
           handler: function() {}
@@ -50,12 +50,12 @@ describe('Host', function() {
         }
       ];
 
-      var services2 = {
+      var funcs2 = {
         foo: function(){},
         bar: function(){}
       };
 
-      var services3 = {
+      var funcs3 = {
         foo: {
           handler: function(){}
         },
@@ -64,83 +64,83 @@ describe('Host', function() {
         }
       };
 
-      var services4 = {
+      var funcs4 = {
         foo: function(){},
         bar: {
           handler: function(){}
         }
       };
 
-      [services1, services2, services3, services4].forEach(function(services) {
-        var host = new Host({services: services});
-        assert.isArray(host.config.services);
-        assert.equal(host.config.services.length, 2);
-        assert.equal(host.config.services[0].name, 'foo');
-        assert.isFunction(host.config.services[0].handler);
-        assert.equal(host.config.services[1].name, 'bar');
-        assert.isFunction(host.config.services[1].handler);
+      [funcs1, funcs2, funcs3, funcs4].forEach(function(funcs) {
+        var host = new Host({functions: funcs});
+        assert.isArray(host.config.functions);
+        assert.equal(host.config.functions.length, 2);
+        assert.equal(host.config.functions[0].name, 'foo');
+        assert.isFunction(host.config.functions[0].handler);
+        assert.equal(host.config.functions[1].name, 'bar');
+        assert.isFunction(host.config.functions[1].handler);
       });
     });
   });
-  describe('#addService()', function() {
+  describe('#addFunction()', function() {
     it('should accept an object', function() {
       var host = new Host({silent: true});
-      var service = {
+      var func = {
         name: 'test',
         handler: function() {}
       };
-      host.addService(service);
-      assert.isDefined(host.services.test);
-      assert.instanceOf(host.services.test, Service);
-      assert.equal(host.services.test.name, 'test');
-      assert.strictEqual(host.services.test.handler, service.handler);
+      host.addFunction(func);
+      assert.isDefined(host.functions.test);
+      assert.instanceOf(host.functions.test, Func);
+      assert.equal(host.functions.test.name, 'test');
+      assert.strictEqual(host.functions.test.handler, func.handler);
     });
-    it('should bind the service\'s `host` prop to itself', function(done) {
+    it('should bind the function\'s `host` prop to itself', function(done) {
       var host = new Host({silent: true});
-      var service = {
+      var func = {
         name: 'test',
         handler: function() {
           assert.strictEqual(this.host, host);
           done();
         }
       };
-      host.addService(service);
-      assert.strictEqual(host.services.test.host, host);
-      host.callService('test');
+      host.addFunction(func);
+      assert.strictEqual(host.functions.test.host, host);
+      host.functions.test.call({},function(){});
     });
     it('can be called multiple times', function() {
       var host = new Host({silent: true});
-      host.addService({
+      host.addFunction({
         name: 'test1',
         handler: function() {}
       });
-      host.addService({
+      host.addFunction({
         name: 'test2',
         handler: function() {}
       });
-      assert.isDefined(host.services.test1);
-      assert.isDefined(host.services.test2);
-      assert.instanceOf(host.services.test1, Service);
-      assert.instanceOf(host.services.test2, Service);
-      assert.equal(host.services.test1.name, 'test1');
-      assert.equal(host.services.test2.name, 'test2');
-      assert.isFunction(host.services.test1.handler);
-      assert.isFunction(host.services.test2.handler);
+      assert.isDefined(host.functions.test1);
+      assert.isDefined(host.functions.test2);
+      assert.instanceOf(host.functions.test1, Func);
+      assert.instanceOf(host.functions.test2, Func);
+      assert.equal(host.functions.test1.name, 'test1');
+      assert.equal(host.functions.test2.name, 'test2');
+      assert.isFunction(host.functions.test1.handler);
+      assert.isFunction(host.functions.test2.handler);
     });
-    it('throws an error if a service is added with a conflicting name', function() {
+    it('throws an error if a function is added with a conflicting name', function() {
       var host = new Host({silent: true});
-      host.addService({
+      host.addFunction({
         name: 'test',
         handler: function() {}
       });
       assert.throws(
         function() {
-          host.addService({
+          host.addFunction({
             name: 'test',
             handler: function() {}
           });
         },
-        'A service has already been defined with the name "test"'
+        'A function has already been defined with the name "test"'
       );
     });
   });
@@ -162,50 +162,50 @@ describe('Host', function() {
       );
     });
   });
-  describe('#callService()', function() {
-    it('can call a service with a callback', function(done) {
+  describe('#functions', function() {
+    it('can call a function with a callback', function(done) {
       var host = new Host({silent: true});
-      host.addService({
+      host.addFunction({
         name: 'test',
-        handler: function(data, done) {
+        handler: function(data, cb) {
           assert.isObject(data);
           assert.isFunction(done);
-          done(null, 'success');
+          cb(null, 'success');
         }
       });
-      host.callService('test', function(err, output) {
+      host.functions.test.call({}, function(err, output) {
         assert.isNull(err);
         assert.equal(output, 'success');
         done();
       });
     });
-    it('can optionally pass data to a service', function(done) {
+    it('can optionally pass data to a function', function(done) {
       var host = new Host({silent: true});
       var dataProvided = {test: 'foo'};
-      host.addService({
+      host.addFunction({
         name: 'test',
-        handler: function(data, done) {
+        handler: function(data, cb) {
           assert.strictEqual(data, dataProvided);
-          done(null, data.test);
+          cb(null, data.test);
         }
       });
-      host.callService('test', dataProvided, function(err, output) {
+      host.functions.test.call(dataProvided, function(err, output) {
         assert.isNull(err);
         assert.equal(output, 'foo');
         done();
       });
     });
-    it('services can complete asynchronously', function(done) {
+    it('functions can complete asynchronously', function(done) {
       var host = new Host({silent: true});
-      host.addService({
+      host.addFunction({
         name: 'test',
-        handler: function(data, done) {
+        handler: function(data, cb) {
           setTimeout(function() {
-            done(null, 'delayed success');
+            cb(null, 'delayed success');
           }, 10);
         }
       });
-      host.callService('test', function(err, output) {
+      host.functions.test.call({}, function(err, output) {
         assert.isNull(err);
         assert.equal(output, 'delayed success');
         done();
@@ -256,7 +256,7 @@ describe('Host', function() {
       var host = new Host({
         outputOnListen: false,
         silent: true,
-        services: {
+        functions: {
           foo: function() {}
         }
       });
@@ -267,32 +267,32 @@ describe('Host', function() {
           assert.isObject(config);
           assert.equal(config.address, host.config.address);
           assert.equal(config.port, host.config.port);
-          assert.isArray(config.services);
-          assert.equal(config.services.length, 1);
-          assert.equal(config.services[0].name, 'foo');
+          assert.isArray(config.functions);
+          assert.equal(config.functions.length, 1);
+          assert.equal(config.functions[0].name, 'foo');
           host.stopListening();
           done();
         });
       });
     });
   });
-  describe('service routing and handling', function() {
-    it('requests can be routed to a service', function(done) {
+  describe('function routing and handling', function() {
+    it('requests can be routed to a function', function(done) {
       var host = new Host({
         outputOnListen: false,
         silent: true
       });
 
-      host.addService({
-        name: 'service1',
-        handler: function(data, done) {
-          done(null, 'in handler1');
+      host.addFunction({
+        name: 'function1',
+        handler: function(data, cb) {
+          cb(null, 'in handler1');
         }
       });
-      host.addService({
-        name: 'service2',
-        handler: function(data, done) {
-          done(null, 'in handler2');
+      host.addFunction({
+        name: 'function2',
+        handler: function(data, cb) {
+          cb(null, 'in handler2');
         }
       });
 
@@ -300,9 +300,9 @@ describe('Host', function() {
         post(host, 'foo', function(err, res, body) {
           assert.equal(res.statusCode, '404');
           assert.equal(body, 'Not found');
-          post(host, 'service1', function(err, res, body) {
+          post(host, 'function1', function(err, res, body) {
             assert.equal(body, 'in handler1');
-            post(host, 'service2', function(err, res, body) {
+            post(host, 'function2', function(err, res, body) {
               assert.equal(body, 'in handler2');
               post(host, 'bar', function(err, res, body) {
                 assert.equal(res.statusCode, '404');
@@ -315,7 +315,7 @@ describe('Host', function() {
         });
       });
     });
-    it('services can receive and send large data sets', function(done) {
+    it('functions can receive and send large data sets', function(done) {
       // A 2.5mb text file
       var testTextFile = path.join(__dirname, 'test_data', 'test.txt');
       var text = fs.readFileSync(testTextFile).toString('utf-8');
@@ -325,13 +325,13 @@ describe('Host', function() {
         silent: true
       });
 
-      host.addService({
+      host.addFunction({
         name: 'text-test',
-        handler: function(data, done) {
+        handler: function(data, cb) {
           if (data.text !== text) {
-            return done('data.text does not match');
+            return cb('data.text does not match');
           }
-          done(null, 'success: ' + data.text);
+          cb(null, 'success: ' + data.text);
         }
       });
 
@@ -343,31 +343,31 @@ describe('Host', function() {
         });
       });
     });
-    it('a service\'s `done` callback can only be called once', function(done) {
+    it('a function\'s `done` callback can only be called once', function(done) {
       var host = new Host({
         outputOnListen: false,
         silent: true
       });
 
-      host.addService({
+      host.addFunction({
         name: 'done-x1',
-        handler: function(data, done) {
-          done(null, 'some success');
+        handler: function(data, cb) {
+          cb(null, 'some success');
         }
       });
-      host.addService({
+      host.addFunction({
         name: 'done-x2',
-        handler: function(data, done) {
-          done('x2');
-          done(null, 'some success x2');
+        handler: function(data, cb) {
+          cb('x2');
+          cb(null, 'some success x2');
         }
       });
-      host.addService({
+      host.addFunction({
         name: 'done-x3',
-        handler: function(data, done) {
-          done(null, 'some success x3');
-          done('x3');
-          done(null, 'some other success x3');
+        handler: function(data, cb) {
+          cb(null, 'some success x3');
+          cb('x3');
+          cb(null, 'some other success x3');
         }
       });
 
@@ -388,34 +388,34 @@ describe('Host', function() {
         });
       });
     });
-    it('a service\'s output can be cached via a `key` param', function(done) {
+    it('a function\'s output can be cached via a `key` param', function(done) {
       var host = new Host({
         outputOnListen: false,
         silent: true
       });
 
       var cachedCount = 0;
-      host.addService({
-        name: 'cached-count',
-        handler: function(data, done) {
+      host.addFunction({
+        name: 'cached_count',
+        handler: function(data, cb) {
           cachedCount++;
-          done(null, cachedCount);
+          cb(null, cachedCount);
         }
       });
 
       var count = 0;
-      host.addService({
+      host.addFunction({
         name: 'count',
-        handler: function(data, done) {
+        handler: function(data, cb) {
           count++;
-          done(null, count);
+          cb(null, count);
         }
       });
 
       host.listen(function() {
-        post(host, 'cached-count', {key: 'test-key-1'}, function(err, res, body) {
+        post(host, 'cached_count', {key: 'test-key-1'}, function(err, res, body) {
           assert.equal(body, '1');
-          post(host, 'cached-count', {key: 'test-key-1'}, function(err, res, body) {
+          post(host, 'cached_count', {key: 'test-key-1'}, function(err, res, body) {
             assert.equal(body, '1');
             post(host, 'count', function(err, res, body) {
               assert.equal(body, '1');
@@ -423,11 +423,11 @@ describe('Host', function() {
                 assert.equal(body, '2');
                 post(host, 'count', function(err, res, body) {
                   assert.equal(body, '3');
-                  post(host, 'cached-count', {key: 'test-key-2'}, function(err, res, body) {
+                  post(host, 'cached_count', {key: 'test-key-2'}, function(err, res, body) {
                     assert.equal(body, '2');
-                    post(host, 'cached-count', {key: 'test-key-1'}, function(err, res, body) {
+                    post(host, 'cached_count', {key: 'test-key-1'}, function(err, res, body) {
                       assert.equal(body, '1');
-                      post(host, 'cached-count', {key: 'test-key-2'}, function(err, res, body) {
+                      post(host, 'cached_count', {key: 'test-key-2'}, function(err, res, body) {
                         assert.equal(body, '2');
                         host.stopListening();
                         done();
@@ -443,7 +443,7 @@ describe('Host', function() {
     });
   });
   describe('#cacheTimeout', function() {
-    it('can be used to set the default cache timeout of all services', function(done) {
+    it('can be used to set the default cache timeout of all functions', function(done) {
       var host = new Host({
         outputOnListen: false,
         silent: true,
@@ -451,11 +451,11 @@ describe('Host', function() {
       });
 
       var count = 0;
-      host.addService({
+      host.addFunction({
         name: 'test',
-        handler: function(data, done) {
+        handler: function(data, cb) {
           count++;
-          done(null, count);
+          cb(null, count);
         }
       });
 
