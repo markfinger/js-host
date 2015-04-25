@@ -4,14 +4,14 @@ service-host
 [![Build Status](https://travis-ci.org/markfinger/service-host.svg?branch=master)](https://travis-ci.org/markfinger/service-host)
 
 Provides a configurable JavaScript host which exposes functions to network requests. Intended 
-to provide the low-level bindings for other languages to access a persistent JavaScript 
-environment running on Node.
+to provide the low-level bindings for other languages to access a JavaScript environment.
 
-A persistent JavaScript environment provides better performance than ExecJS and similar projects which 
-spawn a new environments for every call.
+There are a variety of projects offering execution of JavaScript (ExecJS et al), but their performance
+tends to lag as they typically spawn new environments on every call. By using a persistent JavaScript 
+environment, we gain access to massive improvements in performance.
 
-Using Node as a platform offers access to an enourmous ecosystem, a robust framework for asynchronous 
-programming, and solid debugging.
+Behind the scenes, Node is used as platform to offer access to an enourmous ecosystem, a robust 
+framework for asynchronous programming, and solid debugging capabilities.
 
 Installation
 ------------
