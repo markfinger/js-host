@@ -11,32 +11,22 @@ Installation
 npm install service-host
 ```
 
-Usage
------
+Basic usage
+-----------
 
 Create a file `services.config.js` containing the following:
 
 ```javascript
 module.exports = {
-  // The port that the host will listen at
-  port: 9009,
-  // The services that will be available
-  services: [{
-    name: 'some-service',
-    handler: function(data, cb) {
-      // ...
-      
+  services: {
+    some_service: function(data, cb) {
       // Send an error response
-      if (err) return cb(err);
-      
-      var output = JSON.stringify({
-        // ...
-      });
+      if (err) return cb(new Error('Something bad occurred'));
       
       // Send a success response with data
       cb(null, output);
     }
-  }]
+  }
 });
 ```
 
@@ -61,8 +51,8 @@ Calling the services
 
 Services are exposed to POST requests at the `/service/<name>` endpoint.
 
-To send data, pass serialized JSON as the request's body, and add a 
-`content-type` header set to `application/json`.
+To send data: add a `content-type` header set to `application/json` and 
+pass JSON as the request's body.
 
 Service output can be optionally cached by adding a `cache-key` query param to 
 your requests, for example:
@@ -77,3 +67,34 @@ blocked until the first has resolved.
 
 If a `cache-key` param is provided and the service provides a success response, all 
 subsequent requests will resolve to the same output until the output has expired.
+
+
+Configuration
+-------------
+
+Config files are simply JS files which export a config object, for example:
+
+```javascript
+module.exports = {
+  port: 8000,
+  services: {
+    some_service: function(data, cb) {
+      // ...
+    }
+  }
+};
+```
+
+Config objects may possess the following attributes:
+
+`address`: the address that the host will listen at. Defaults to `'127.0.0.1'`.
+
+`port`: the port number that the host will listen at. Defaults to `9009`.
+
+`requestDataLimit`: The maximum size allowed for a request body. Defaults to `'10mb'`.
+
+`cacheTimeout`: The time period in milliseconds before the cache will expire an entry. Defaults to 24 hours.
+
+`logger`: An object which will be used instead of the default logger. The object must provide a similar API to the `console` object, eg: it must provide functions named `log`, `error`, `info`, etc.
+
+`services`: an key/value object with service names as keys and functions as values. Alternatively, values may be objects which provide the service's function as a property named `handler`.
