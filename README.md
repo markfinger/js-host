@@ -10,7 +10,7 @@ There are a variety of projects offering execution of JavaScript (ExecJS et al),
 tends to lag as they typically spawn new environments on every call. By using a persistent JavaScript 
 environment, we gain access to massive improvements in performance.
 
-Behind the scenes, Node is used as platform to offer access to an enourmous ecosystem, a robust 
+Behind the scenes, Node is used to provide a platform with access to an enourmous ecosystem, a robust 
 framework for asynchronous programming, and solid debugging capabilities.
 
 Installation
@@ -43,18 +43,17 @@ Start the host with:
 node_modules/.bin/service-host services.config.js
 ```
 
-And call your service by sending a POST request to `http://127.0.0.1:9009/service/some_service`.
+And call the `some_service` service by sending a POST request to `http://127.0.0.1:9009/service/some_service`.
 
 
 Services
 --------
 
-Services are functions which accept two arguments, `data` and `cb`.
+Services are functions which the hosts exposes to incoming requests. Services are provided with two arguments:
 
-`data` is an object generated from deserializing the data sent in the request to the service.
-
-`cb` is a function which should be called once the service has completed or encountered an error. 
-`cb` assumes that the first argument indicates an error, and the second argument indicates success.
+- `data` is an object generated from deserializing the data sent in the request.
+- `cb` is a function which should be called once the service has completed or encountered an error. 
+  `cb` assumes that the first argument indicates an error, and the second argument indicates success.
 
 
 ### Handling success
@@ -125,10 +124,10 @@ function(data, cb) {
   // Pass values explicitly
   logData(this.host.logger, data);
   
-  // Pass a new function which uses our `this`
+  // Create a new function which uses the outer `this` binding
   someAsyncFunc(function(err, res) {
     if (err) {
-      this.host.logger.error('Something bad occured );
+      this.host.logger.error('Something bad happened');
       return cb(err);
     }
     cb(null, res);
@@ -141,13 +140,13 @@ function logData(logger, data) {
 ```
 
 Note: the `this` binding of a service is generated per-request. Values added to the `this` object 
-are not passed to other requests.
+will not be passed along to other requests.
 
 
 Config files
 ------------
 
-Config files are simply JS files which export a config object, for example:
+Config files are simply JS files which export an object, for example:
 
 ```javascript
 module.exports = {
@@ -182,16 +181,11 @@ Services are exposed to POST requests at the `/service/<name>` endpoint.
 
 To send data: set the request's content-type to `application/json` and pass JSON as the request's body.
 
-Service output can be optionally cached by adding a `key` query param to your requests, for example:
-
-```
-/service/some_service?key=<key>
-```
+Service output can be optionally cached by adding a `key` query param to your requests, for example: `/service/some_service?key=<key>`.
 
 If a `key` is provided and the service provides a success response, all subsequent requests will 
 resolve to the same output until the cache expires it.
 
 Note: if concurrent requests for a service use the same `key` param, the first request will trigger 
 the call to the service, and the other requests will be blocked until the first has completed. Once 
-the service completes, all concurrent requests are provided with the error or success output from 
-the service.
+the service completes, all concurrent requests are provided with either the error or success output.
