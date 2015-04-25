@@ -160,16 +160,16 @@ describe('Manager', function() {
           assert.notEqual(json.port, duplicateConfig.port);
           assert.notStrictEqual(_host, host);
           assert.strictEqual(manager.hosts[pathToDuplicateConfig], _host);
-          post(host, 'echo', {data: {echo: 'foo'}, cacheKey: 'test'}, function(err, res, body) {
+          post(host, 'echo', {data: {echo: 'foo'}, key: 'test'}, function(err, res, body) {
             assert.isNull(err);
             assert.equal(body, 'foo');
-            post(host, 'echo', {data: {echo: 'bar'}, cacheKey: 'test'}, function(err, res, body) {
+            post(host, 'echo', {data: {echo: 'bar'}, key: 'test'}, function(err, res, body) {
               assert.isNull(err);
               assert.equal(body, 'foo');
-              post(_host, 'echo', {data: {echo: 'bar'}, cacheKey: 'test'}, function(err, res, body) {
+              post(_host, 'echo', {data: {echo: 'bar'}, key: 'test'}, function(err, res, body) {
                 assert.isNull(err);
                 assert.equal(body, 'bar');
-                post(_host, 'echo', {data: {echo: 'woz'}, cacheKey: 'test'}, function(err, res, body) {
+                post(_host, 'echo', {data: {echo: 'woz'}, key: 'test'}, function(err, res, body) {
                   assert.isNull(err);
                   assert.equal(body, 'bar');
                   host.process.kill();

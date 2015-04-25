@@ -388,7 +388,7 @@ describe('Host', function() {
         });
       });
     });
-    it('a service\'s output can be cached via a `cache-key` param', function(done) {
+    it('a service\'s output can be cached via a `key` param', function(done) {
       var host = new Host({
         outputOnListen: false,
         silent: true
@@ -413,9 +413,9 @@ describe('Host', function() {
       });
 
       host.listen(function() {
-        post(host, 'cached-count', {cacheKey: 'test-key-1'}, function(err, res, body) {
+        post(host, 'cached-count', {key: 'test-key-1'}, function(err, res, body) {
           assert.equal(body, '1');
-          post(host, 'cached-count', {cacheKey: 'test-key-1'}, function(err, res, body) {
+          post(host, 'cached-count', {key: 'test-key-1'}, function(err, res, body) {
             assert.equal(body, '1');
             post(host, 'count', function(err, res, body) {
               assert.equal(body, '1');
@@ -423,11 +423,11 @@ describe('Host', function() {
                 assert.equal(body, '2');
                 post(host, 'count', function(err, res, body) {
                   assert.equal(body, '3');
-                  post(host, 'cached-count', {cacheKey: 'test-key-2'}, function(err, res, body) {
+                  post(host, 'cached-count', {key: 'test-key-2'}, function(err, res, body) {
                     assert.equal(body, '2');
-                    post(host, 'cached-count', {cacheKey: 'test-key-1'}, function(err, res, body) {
+                    post(host, 'cached-count', {key: 'test-key-1'}, function(err, res, body) {
                       assert.equal(body, '1');
-                      post(host, 'cached-count', {cacheKey: 'test-key-2'}, function(err, res, body) {
+                      post(host, 'cached-count', {key: 'test-key-2'}, function(err, res, body) {
                         assert.equal(body, '2');
                         host.stopListening();
                         done();
@@ -460,12 +460,12 @@ describe('Host', function() {
       });
 
       host.listen(function() {
-        post(host, 'test', {cacheKey: 'test-key'}, function(err, res, body) {
+        post(host, 'test', {key: 'test-key'}, function(err, res, body) {
           assert.equal(body, '1');
-          post(host, 'test', {cacheKey: 'test-key'}, function(err, res, body) {
+          post(host, 'test', {key: 'test-key'}, function(err, res, body) {
             assert.equal(body, '1');
             setTimeout(function() {
-              post(host, 'test', {cacheKey: 'test-key'}, function(err, res, body) {
+              post(host, 'test', {key: 'test-key'}, function(err, res, body) {
                 assert.equal(body, '2');
                 host.stopListening();
                 done();

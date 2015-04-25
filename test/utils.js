@@ -11,8 +11,8 @@ module.exports = {
       opts = {};
     }
     var url = host.getUrl() + '/service/' + serviceName;
-    if (opts.cacheKey) {
-      url += '?cache-key=' + encodeURIComponent(opts.cacheKey);
+    if (opts.key) {
+      url += '?key=' + encodeURIComponent(opts.key);
     }
     request.post({
       url: url,
