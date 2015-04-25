@@ -24,7 +24,7 @@ npm install js-host
 Basic usage
 -----------
 
-Create a file `host.config.js` which will contain the configuration for the host. For example:
+Create a file `host.config.js` which will contain the configuration for the host.
 
 ```javascript
 module.exports = {
@@ -34,7 +34,7 @@ module.exports = {
       cb(null, 'Hello, World!');
     }
   }
-});
+};
 ```
 
 Start the host with:
