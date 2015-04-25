@@ -5,6 +5,8 @@ service-host
 
 Provides a configurable JavaScript host which exposes your services to network requests.
 
+Intended for providing non-JS environments access to a persistent JS process.
+
 
 Installation
 ------------
@@ -23,10 +25,13 @@ Create a file `services.config.js` containing the following:
 module.exports = {
   services: {
     some_service: function(data, cb) {
-      // Send an error response
-      if (err) return cb(new Error('Something bad occurred'));
       
-      // Send a success response with data
+      // process the data ...
+      
+      // Send an error response
+      cb(new Error('Something bad happened'));
+      
+      // Send a success response
       cb(null, {message: 'hello'});
     }
   }
@@ -76,11 +81,11 @@ Services
 
 Services are functions which accept two arguments, `data` and `cb`.
 
-`data` is the deserialized body of the incoming request.
+`data` is an object containing the deserialized body of the request.
 
-`cb` is a function which should be called once the service has completed. The function
-will assume that the first argument indicates an error, and the second argument indicates 
-success.
+`cb` is a function which should be called once the service has completed. `cb` assumes that the 
+first argument indicates an error, and the second argument indicates success.
+
 
 ### Handling errors
 
@@ -97,24 +102,40 @@ try {
 }
 ```
 
+Note: if you use a try/catch statement, remember to exit the function with `return`.
+
+When returning your own errors, you should return `Error` objects rather than strings. For example:
+
+```javascript
+// Bad
+cb('Something bad happened');
+
+// Good
+cb(new Error('Something bad happened'));
+```
+
+The primary advantage of using Error objects, is that the host will provide a more accurate stack trace.
+
+
 ### Handling success
 
-Once your service has completed successfully, you should pass a value to `cb` as the 
-second argument. For example:
+Once your service has completed successfully, you should pass a value to `cb` as the second argument. 
+For example:
 
 ```javascript
 cb(null, {status: 'success'});
 ```
 
-The success object can be of any type, but beware that it will either by serialized to JSON
-or corced to a string.
+If the second argument is an object, it will be serialized to JSON. All other types will 
+coerced to strings.
+
 
 ### Accessing the host from a service
 
 Services have access to the host via `this.host`. For example:
 
 ```javascript
-// To write to the host's logs from a service
+// To write to the host's logs
 
 function(data, cb) {
   this.host.logger.log('Some message');
