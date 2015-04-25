@@ -5,6 +5,8 @@ service-host
 
 Provides a configurable JavaScript host which exposes your services to network requests.
 
+Intended for providing non-JS environments access to a persistent JS process.
+
 
 Installation
 ------------
@@ -23,11 +25,14 @@ Create a file `services.config.js` containing the following:
 module.exports = {
   services: {
     some_service: function(data, cb) {
-      // Send an error response
-      if (err) return cb(new Error('Something bad occurred'));
       
-      // Send a success response with data
-      cb(null, output);
+      // process the data ...
+      
+      // Send an error response
+      cb(new Error('Something bad happened'));
+      
+      // Send a success response
+      cb(null, {message: 'hello'});
     }
   }
 });
@@ -71,6 +76,93 @@ Config objects may possess the following attributes:
 `services`: an key/value object with service names as keys and functions as values. Alternatively, values may be objects which provide the service's function as a property named `handler`.
 
 
+Services
+--------
+
+Services are functions which accept two arguments, `data` and `cb`.
+
+`data` is an object containing the deserialized body of the request.
+
+`cb` is a function which should be called once the service has completed. `cb` assumes that the 
+first argument indicates an error, and the second argument indicates success.
+
+
+### Handling errors
+
+Generally, you should try to avoid throwing errors during a request. Rather, try/catch
+any potentially dangerous code and pass the caught error to the `cb` as the first argument.
+For example:
+
+```javascript
+try {
+  // Dangerous code
+  // ...
+} catch(err) {
+  return cb(err);
+}
+```
+
+Note: if you use a try/catch statement, remember to exit the function with `return`.
+
+When returning your own errors, you should return `Error` objects rather than strings. For example:
+
+```javascript
+// Bad
+cb('Something bad happened');
+
+// Good
+cb(new Error('Something bad happened'));
+```
+
+The primary advantage of using Error objects, is that the host will provide a more accurate stack trace.
+
+
+### Handling success
+
+Once your service has completed successfully, you should pass a value to `cb` as the second argument. 
+For example:
+
+```javascript
+cb(null, {status: 'success'});
+```
+
+If the second argument is an object, it will be serialized to JSON. All other types will 
+coerced to strings.
+
+
+### Accessing the host from a service
+
+Services have access to the host via `this.host`. For example:
+
+```javascript
+// To write to the host's logs
+
+function(data, cb) {
+  this.host.logger.log('Some message');
+  this.host.logger.warn('Some warning');
+  this.host.logger.error('Some error');
+};
+```
+
+If you want to access the host from another function, you need to bind the `this` value to
+the function calls. For example:
+
+```javascript
+// The service
+function(data, cb) {
+  logSomething.call(this, data);
+}
+
+// Another function
+function logSomething(data) {
+  this.host.logger.info('So much data...', data);
+}
+```
+
+Note: the `this` binding of a service is generated per-request. Values added to the `this` 
+object are not passed to other requests.
+
+
 Calling the services
 --------------------
 
@@ -92,3 +184,6 @@ blocked until the first has resolved.
 
 If a `cache-key` param is provided and the service provides a success response, all 
 subsequent requests will resolve to the same output until the output has expired.
+
+If a `cache-key` param is provided and the service provides an error response, all 
+concurrent requests will receive the error. Note: errors responses are not cached.
