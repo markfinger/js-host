@@ -7,9 +7,11 @@ Provides a configurable JavaScript host which exposes functions to network reque
 to provide the low-level bindings for other languages to access a persistent JavaScript 
 environment running on Node.
 
-A persistent JavaScript environment provides better performance than
-[ExecJS](https://github.com/sstephenson/execjs) and similar projects, and Node offers access to 
-both an enourmous ecosystem and a solid framework for asynchronous programming.
+A persistent JavaScript environment provides better performance than ExecJS and similar projects which 
+spawn a new environments for every call.
+
+Using Node as a platform offers access to an enourmous ecosystem, a robust framework for asynchronous 
+programming, and solid debugging.
 
 Installation
 ------------
