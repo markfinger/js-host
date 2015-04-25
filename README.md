@@ -73,23 +73,26 @@ strings.
 ### Handling errors
 
 You should try to gracefully handle any errors encountered. Any uncaught errors will cause the host
-to assume the world and exit immediately. If you encounter an error condition, pass an `Error` instance
+to assume the worst and exit immediately. If you encounter an error condition, pass an `Error` instance
 to `cb`, and let the host handle it. If you need to execute code that may throw errors, use a try/catch, 
-pass the caught error to the host and exit your function. For example:
+pass the error to the host, and exit your function. For example:
 
 ```javascript
-try {
-  dangerousFunc();
-} catch(err) {
-  return cb(err);
-}
+function(data, cb) {
+  try {
+    dangerousFunc();
+  } catch(err) {
+    return cb(err);
+  }
+  cb(null, 'ok');
+};
 ```
 
 Note: if you use a try/catch statement, remember to exit the function with `return` when sending 
 errors back.
 
-If you encounter a condition deserving of an error, make sure you always return `Error` objects 
-rather than strings. For example:
+If you encounter a condition deserving of an error, always provide `Error` objects rather than 
+strings. For example:
 
 ```javascript
 // Bad
