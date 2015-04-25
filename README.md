@@ -8,10 +8,10 @@ to provide the low-level bindings for other languages to access a JavaScript env
 
 There are a variety of projects offering execution of JavaScript (ExecJS et al), but their performance
 tends to lag as they typically spawn new environments on every call. By using a persistent JavaScript 
-environment, we gain access to massive improvements in performance.
+environment, we gain massive improvements in performance and the ability to persist state.
 
-Behind the scenes, Node is used to provide a platform with access to an enourmous ecosystem, a robust 
-framework for asynchronous programming, and solid debugging capabilities.
+Behind the scenes, Node is used to provide a platform with an enourmous ecosystem, robust 
+support for asynchronous programming, and solid debugging capabilities.
 
 Installation
 ------------
