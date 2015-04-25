@@ -5,8 +5,8 @@ service-host
 
 Provides a configurable JavaScript host which exposes your services to network requests.
 
-Intended for providing non-JS environments access to a persistent JS process.
-
+Intended to provide the low-level bindings for other languages to access a persistent
+JavaScript environment.
 
 Installation
 ------------
@@ -41,7 +41,7 @@ module.exports = {
 Start a host using your config with:
 
 ```
-node node_modules/.bin/service-host services.config.js
+node_modules/.bin/service-host services.config.js
 ```
 
 
@@ -52,7 +52,7 @@ Config files are simply JS files which export a config object, for example:
 
 ```javascript
 module.exports = {
-  port: 8000,
+  port: 8080,
   services: {
     some_service: function(data, cb) {
       // ...
@@ -67,13 +67,13 @@ Config objects may possess the following attributes:
 
 `port`: the port number that the host will listen at. Defaults to `9009`.
 
-`requestDataLimit`: The maximum size allowed for a request body. Defaults to `'10mb'`.
+`requestDataLimit`: The maximum size allowed for a request's body. Defaults to `'10mb'`.
 
 `cacheTimeout`: The time period in milliseconds before the cache will expire an entry. Defaults to 24 hours.
 
 `logger`: An object which will be used instead of the default logger. The object must provide a similar API to the `console` object, eg: it must provide functions named `log`, `error`, `info`, etc.
 
-`services`: an key/value object with service names as keys and functions as values. Alternatively, values may be objects which provide the service's function as a property named `handler`.
+`services`: a key/value object with service names as keys and functions as values. Alternatively, values may be objects which provide the service's function as a property named `handler`.
 
 
 Services
@@ -87,24 +87,38 @@ Services are functions which accept two arguments, `data` and `cb`.
 first argument indicates an error, and the second argument indicates success.
 
 
+### Handling success
+
+Once your service has completed successfully, you should pass a value to `cb` as the second 
+argument. For example:
+
+```javascript
+cb(null, {status: 'success'});
+```
+
+Note: the value of the second argument is sent back to the caller as a text response. If the 
+value is an object, it will be serialized to JSON. All other types will be coerced to strings.
+
+
 ### Handling errors
 
-Generally, you should try to avoid throwing errors during a request. Rather, try/catch
-any potentially dangerous code and pass the caught error to the `cb` as the first argument.
-For example:
+Generally, you should try to avoid throwing errors during a request. Rather, try/catch any 
+potentially dangerous code and pass the caught error to `cb` as the first argument. For
+example:
 
 ```javascript
 try {
-  // Dangerous code
-  // ...
+  dangerousFunc();
 } catch(err) {
   return cb(err);
 }
 ```
 
-Note: if you use a try/catch statement, remember to exit the function with `return`.
+Note: if you use a try/catch statement, remember to exit the function with `return` when sending 
+errors back.
 
-When returning your own errors, you should return `Error` objects rather than strings. For example:
+To make your life as a developer easier, you should always return `Error` objects rather than 
+strings. For example:
 
 ```javascript
 // Bad
@@ -114,49 +128,43 @@ cb('Something bad happened');
 cb(new Error('Something bad happened'));
 ```
 
-The primary advantage of using Error objects, is that the host will provide a more accurate stack trace.
-
-
-### Handling success
-
-Once your service has completed successfully, you should pass a value to `cb` as the second argument. 
-For example:
-
-```javascript
-cb(null, {status: 'success'});
-```
-
-If the second argument is an object, it will be serialized to JSON. All other types will 
-coerced to strings.
+By using Error objects, the host is able to provide an accurate stack trace, indicating the source 
+of the error.
 
 
 ### Accessing the host from a service
 
-Services have access to the host via `this.host`. For example:
+Services can access their host via `this.host`. For example:
 
 ```javascript
-// To write to the host's logs
-
-function(data, cb) {
-  this.host.logger.log('Some message');
-  this.host.logger.warn('Some warning');
-  this.host.logger.error('Some error');
-};
+// Write to the host's logs
+this.host.logger.info('Something happened');
+this.host.logger.warn('Something bad might happen');
+this.host.logger.error('Something bad happened');
 ```
 
-If you want to access the host from another function, you need to bind the `this` value to
-the function calls. For example:
+Note: the `this` binding will not be passed along to other functions. You need to either pass values explicity or pass the `this` binding along. For example:
 
 ```javascript
-// The service
 function(data, cb) {
-  logSomething.call(this, data);
+  this.host.logger.info('Starting service');
+  
+  // Pass values explicitly
+  logData(this.host.logger, data);
+  
+  // Pass a new function which uses our `this`
+  someAsyncFunc(function(err, res) {
+    if (err) {
+      this.host.logger.error('Something bad occured );
+      return cb(err);
+    }
+    cb(null, res);
+  }.bind(this));
 }
 
-// Another function
-function logSomething(data) {
-  this.host.logger.info('So much data...', data);
-}
+function logData(logger, data) {
+  logger.info('So much data...', data);
+};
 ```
 
 Note: the `this` binding of a service is generated per-request. Values added to the `this` 
@@ -171,19 +179,17 @@ Services are exposed to POST requests at the `/service/<name>` endpoint.
 To send data: add a `content-type` header set to `application/json` and 
 pass JSON as the request's body.
 
-Service output can be optionally cached by adding a `cache-key` query param to 
+Service output can be optionally cached by adding a `key` query param to 
 your requests, for example:
 
 ```
-/service/some-service?cache-key=<key>
+/service/some_service?key=<key>
 ```
 
-If concurrent requests for a service use the same `cache-key` param, the first 
+If a `key` is provided and the service provides a success response, all subsequent 
+requests will resolve to the same output until the cache expires it.
+
+Note: if concurrent requests for a service use the same `key` param, the first 
 request will trigger the call to the service, and the other requests will be 
-blocked until the first has resolved.
-
-If a `cache-key` param is provided and the service provides a success response, all 
-subsequent requests will resolve to the same output until the output has expired.
-
-If a `cache-key` param is provided and the service provides an error response, all 
-concurrent requests will receive the error. Note: errors responses are not cached.
+blocked until the first has completed. Once the service completes, all concurrent
+requests are provided with the error or success output from the service.
