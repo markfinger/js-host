@@ -7,11 +7,11 @@ Provides a configurable JavaScript host which exposes functions to network reque
 to provide the low-level bindings for other languages to access a JavaScript environment.
 
 There are a variety of projects offering execution of JavaScript (ExecJS et al), but their performance
-tends to lag as they typically spawn new environments on every call. By using a persistent JavaScript 
-environment, we gain massive performance improvements and the ability to persist state.
+tends to lag as they typically spawn new environments on every call. 
 
-Behind the scenes, Node is used to provide a platform with an enormous ecosystem, robust
-support for asynchronous programming, and solid debugging capabilities.
+Using a persistent JavaScript environment enables massive performance improvements as we can persist 
+state across calls and avoid the overhead of spawning environments.
+
 
 Installation
 ------------
@@ -28,7 +28,6 @@ Create a file `host.config.js` which will contain the configuration for the host
 
 ```javascript
 module.exports = {
-  port: 9009,
   functions: {
     hello_world: function(data, cb) {
       cb(null, 'Hello, World!');
@@ -49,8 +48,8 @@ And call `hello_world` by sending a POST request to `http://127.0.0.1:9009/funct
 Functions
 ---------
 
-Typical JavaScript functions which the hosts exposes to incoming requests. When a request is matched to a
-function, it is called with two arguments:
+The functions definition of a host config is a simple map which enables network requests to be passed 
+to functions. When a request is matched to a function, the function is called with two arguments:
 
 - `data` is an object generated from deserializing the data sent in the request.
 - `cb` is a function which enables you to indicate that your function has either completed successfully,
@@ -74,9 +73,9 @@ strings.
 
 ### Handling errors
 
-You should try to gracefully handle any errors encountered as uncaught errors will cause the host
+You should try to gracefully handle any errors encountered as uncaught errors may cause the host
 to assume the worst and exit immediately. If you encounter an error condition, pass an `Error`
-instance to `cb`, and let the host handle it. If you need to execute code that may throw errors,
+object to `cb`, and let the host handle it. If you need to execute code that may throw errors,
 use a try/catch, pass the error to the host, and exit your function. For example:
 
 ```javascript
@@ -168,19 +167,16 @@ module.exports = {
 
 Config objects may possess the following attributes:
 
+`functions`: a key/value object with names -> functions.
+
 `address`: the address that the host will listen at. Defaults to `'127.0.0.1'`.
 
 `port`: the port number that the host will listen at. Defaults to `9009`.
 
 `requestDataLimit`: The maximum size allowed for a request's body. Defaults to `'10mb'`.
 
-`cacheTimeout`: The time period in milliseconds before the cache will expire an entry. Defaults to 24 hours.
-
 `logger`: An object which will be used instead of the default logger. The object must provide a similar API to
 the `console` object, eg: it must provide functions named `log`, `error`, `info`, etc.
-
-`functions`: a key/value object with function names as keys and functions as values. Values may also be
-objects which expose a function under a property named `handler`.
 
 
 Calling a function
@@ -189,14 +185,3 @@ Calling a function
 Functions are exposed to POST requests at the `/function/<name>` endpoint.
 
 To send data: set the request's content-type to `application/json` and pass JSON as the request's body.
-
-Function output can be optionally cached by adding a `key` query param to your requests, for example:
-`/function/my_func?key=<key>`.
-
-If a `key` is provided and the function provides a success response, all subsequent requests will
-resolve to the same output until the cache expires it.
-
-Note: if concurrent requests for a function use the same `key` param, the first request will trigger
-the call to the function, and the other requests will be blocked until the first has completed. Once
-the function signals completion, all concurrent requests are provided with either the error or success
-output.
