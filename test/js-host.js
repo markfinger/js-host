@@ -64,7 +64,7 @@ describe('bin/js-host.js', function() {
       }
     });
   });
-  it('an error thrown in a function will not take down the process', function(done) {
+  it('an error thrown within a function will not take down the process', function(done) {
     var process = child_process.spawn(
       'node', [pathToBin, pathToTestConfig]
     );
@@ -94,6 +94,39 @@ describe('bin/js-host.js', function() {
       });
     });
   });
+  it('an uncaught error thrown will take down the process', function(done) {
+    var process = child_process.spawn(
+      'node', [pathToBin, pathToTestConfig]
+    );
+
+    var host = new Host(
+      _.defaults({silent: true}, require('./test_config/config.js'))
+    );
+
+    var stderr = '';
+
+    process.stderr.on('data', function(data) {
+      stderr += data.toString();
+    });
+
+    var hasExited = false;
+    process.on('exit', function() {
+      hasExited = true;
+    });
+
+    // Wait for stdout, which should indicate the server's running
+    process.stdout.once('data', function(data) {
+      assert.equal(data.toString(), 'Host listening at 127.0.0.1:8000\n');
+      post(host, 'error_async', function(err, res, body) {
+        assert.instanceOf(err, Error);
+        setTimeout(function() {
+          assert.isTrue(hasExited);
+          assert.include(stderr, 'Error: Error function');
+          done();
+        }, 10);
+      });
+    });
+  });
   it('can output the complete config of a host', function() {
     var output = spawnSync(
       'node', [pathToBin, pathToTestConfig, '--config']
@@ -106,7 +139,7 @@ describe('bin/js-host.js', function() {
     assert.equal(config.address, '127.0.0.1');
     assert.equal(config.port, 8000);
     assert.isArray(config.functions);
-    assert.equal(config.functions.length, 3);
+    assert.equal(config.functions.length, 4);
     assert.isTrue(config.silent);
   });
   it('can start listening and output the config as JSON', function(done) {
@@ -119,7 +152,7 @@ describe('bin/js-host.js', function() {
       assert.equal(config.address, '127.0.0.1');
       assert.equal(config.port, 8000);
       assert.isArray(config.functions);
-      assert.equal(config.functions.length, 3);
+      assert.equal(config.functions.length, 4);
       assert.isTrue(config.silent);
       process.kill();
       done();
@@ -144,7 +177,7 @@ describe('bin/js-host.js', function() {
         '' + testConfig.port
       );
       assert.isArray(config.functions);
-      assert.equal(config.functions.length, 3);
+      assert.equal(config.functions.length, 4);
       assert.isTrue(config.silent);
       var host = new Host({
         silent: true,
