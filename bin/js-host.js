@@ -69,7 +69,11 @@ if (argv.port !== undefined) {
 }
 
 if (argv.config) {
-  console.log(JSON.stringify(host.config));
+  console.log(
+    JSON.stringify(
+      host.getSerializableConfig()
+    )
+  );
   return;
 }
 
@@ -77,7 +81,7 @@ var onListen;
 if (argv.json) {
   config.outputOnListen = false;
   onListen = function(host) {
-    console.log(JSON.stringify(host.config));
+    console.log(JSON.stringify(host.getSerializableConfig()));
   };
 }
 

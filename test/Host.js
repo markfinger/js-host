@@ -5,6 +5,7 @@ var fs = require('fs');
 var assert = require('chai').assert;
 var request = require('request');
 var _ = require('lodash');
+var packageJson = require('../package.json');
 var Func = require('../lib/Func');
 var Host = require('../lib/Host');
 var echo = require('./test_functions/echo');
@@ -38,50 +39,6 @@ describe('Host', function() {
       );
     });
   });
-  describe('#config', function() {
-    it('should accept a variety of notations for functions', function() {
-      var funcs1 = [
-        {
-          name: 'foo',
-          handler: function() {}
-        }, {
-          name: 'bar',
-          handler: function() {}
-        }
-      ];
-
-      var funcs2 = {
-        foo: function(){},
-        bar: function(){}
-      };
-
-      var funcs3 = {
-        foo: {
-          handler: function(){}
-        },
-        bar: {
-          handler: function(){}
-        }
-      };
-
-      var funcs4 = {
-        foo: function(){},
-        bar: {
-          handler: function(){}
-        }
-      };
-
-      [funcs1, funcs2, funcs3, funcs4].forEach(function(funcs) {
-        var host = new Host({functions: funcs});
-        assert.isArray(host.config.functions);
-        assert.equal(host.config.functions.length, 2);
-        assert.equal(host.config.functions[0].name, 'foo');
-        assert.isFunction(host.config.functions[0].handler);
-        assert.equal(host.config.functions[1].name, 'bar');
-        assert.isFunction(host.config.functions[1].handler);
-      });
-    });
-  });
   describe('#addFunction()', function() {
     it('should accept an object', function() {
       var host = new Host({silent: true});
@@ -94,19 +51,6 @@ describe('Host', function() {
       assert.instanceOf(host.functions.test, Func);
       assert.equal(host.functions.test.name, 'test');
       assert.strictEqual(host.functions.test.handler, func.handler);
-    });
-    it('should bind the function\'s `host` prop to itself', function(done) {
-      var host = new Host({silent: true});
-      var func = {
-        name: 'test',
-        handler: function() {
-          assert.strictEqual(this.host, host);
-          done();
-        }
-      };
-      host.addFunction(func);
-      assert.strictEqual(host.functions.test.host, host);
-      host.functions.test.call({},function(){});
     });
     it('can be called multiple times', function() {
       var host = new Host({silent: true});
@@ -162,56 +106,6 @@ describe('Host', function() {
       );
     });
   });
-  describe('#functions', function() {
-    it('can call a function with a callback', function(done) {
-      var host = new Host({silent: true});
-      host.addFunction({
-        name: 'test',
-        handler: function(data, cb) {
-          assert.isObject(data);
-          assert.isFunction(done);
-          cb(null, 'success');
-        }
-      });
-      host.functions.test.call({}, function(err, output) {
-        assert.isNull(err);
-        assert.equal(output, 'success');
-        done();
-      });
-    });
-    it('can optionally pass data to a function', function(done) {
-      var host = new Host({silent: true});
-      var dataProvided = {test: 'foo'};
-      host.addFunction({
-        name: 'test',
-        handler: function(data, cb) {
-          assert.strictEqual(data, dataProvided);
-          cb(null, data.test);
-        }
-      });
-      host.functions.test.call(dataProvided, function(err, output) {
-        assert.isNull(err);
-        assert.equal(output, 'foo');
-        done();
-      });
-    });
-    it('functions can complete asynchronously', function(done) {
-      var host = new Host({silent: true});
-      host.addFunction({
-        name: 'test',
-        handler: function(data, cb) {
-          setTimeout(function() {
-            cb(null, 'delayed success');
-          }, 10);
-        }
-      });
-      host.functions.test.call({}, function(err, output) {
-        assert.isNull(err);
-        assert.equal(output, 'delayed success');
-        done();
-      });
-    });
-  });
   describe('#listen()', function() {
     it('can start the listenerServer', function(done) {
       var host = new Host({
@@ -251,8 +145,8 @@ describe('Host', function() {
       });
     });
   });
-  describe('/config endpoint', function() {
-    it('can expose a host\'s config as JSON', function(done) {
+  describe('/status endpoint', function() {
+    it('can expose a host\'s status as JSON', function(done) {
       var host = new Host({
         outputOnListen: false,
         silent: true,
@@ -261,15 +155,22 @@ describe('Host', function() {
         }
       });
       host.listen(function() {
-        request(host.getUrl() + '/config', function(err, res, body) {
+        request(host.getUrl() + '/status', function(err, res, body) {
           assert.isNull(err);
-          var config = JSON.parse(body);
+          var status = JSON.parse(body);
+
+          assert.isObject(status);
+          assert.equal(status.type, 'Host');
+          assert.isDefined(status.version);
+          assert.equal(status.version, packageJson.version);
+          assert.isUndefined(status.logger);
+          var config = status.config;
           assert.isObject(config);
           assert.equal(config.address, host.config.address);
           assert.equal(config.port, host.config.port);
           assert.isArray(config.functions);
-          assert.equal(config.functions.length, 1);
-          assert.equal(config.functions[0].name, 'foo');
+          assert.include(config.functions, 'foo');
+
           host.stopListening();
           done();
         });
@@ -299,14 +200,14 @@ describe('Host', function() {
       host.listen(function() {
         post(host, 'foo', function(err, res, body) {
           assert.equal(res.statusCode, '404');
-          assert.equal(body, 'Not found');
+          assert.equal(body, 'Not found. Unknown function "foo"');
           post(host, 'function1', function(err, res, body) {
             assert.equal(body, 'in handler1');
             post(host, 'function2', function(err, res, body) {
               assert.equal(body, 'in handler2');
               post(host, 'bar', function(err, res, body) {
                 assert.equal(res.statusCode, '404');
-                assert.equal(body, 'Not found');
+                assert.equal(body, 'Not found. Unknown function "bar"');
                 host.stopListening();
                 done();
               });
@@ -388,93 +289,6 @@ describe('Host', function() {
         });
       });
     });
-    it('a function\'s output can be cached via a `key` param', function(done) {
-      var host = new Host({
-        outputOnListen: false,
-        silent: true
-      });
-
-      var cachedCount = 0;
-      host.addFunction({
-        name: 'cached_count',
-        handler: function(data, cb) {
-          cachedCount++;
-          cb(null, cachedCount);
-        }
-      });
-
-      var count = 0;
-      host.addFunction({
-        name: 'count',
-        handler: function(data, cb) {
-          count++;
-          cb(null, count);
-        }
-      });
-
-      host.listen(function() {
-        post(host, 'cached_count', {key: 'test-key-1'}, function(err, res, body) {
-          assert.equal(body, '1');
-          post(host, 'cached_count', {key: 'test-key-1'}, function(err, res, body) {
-            assert.equal(body, '1');
-            post(host, 'count', function(err, res, body) {
-              assert.equal(body, '1');
-              post(host, 'count', function(err, res, body) {
-                assert.equal(body, '2');
-                post(host, 'count', function(err, res, body) {
-                  assert.equal(body, '3');
-                  post(host, 'cached_count', {key: 'test-key-2'}, function(err, res, body) {
-                    assert.equal(body, '2');
-                    post(host, 'cached_count', {key: 'test-key-1'}, function(err, res, body) {
-                      assert.equal(body, '1');
-                      post(host, 'cached_count', {key: 'test-key-2'}, function(err, res, body) {
-                        assert.equal(body, '2');
-                        host.stopListening();
-                        done();
-                      });
-                    });
-                  });
-                });
-              });
-            });
-          });
-        });
-      });
-    });
-  });
-  describe('#cacheTimeout', function() {
-    it('can be used to set the default cache timeout of all functions', function(done) {
-      var host = new Host({
-        outputOnListen: false,
-        silent: true,
-        cacheTimeout: 20
-      });
-
-      var count = 0;
-      host.addFunction({
-        name: 'test',
-        handler: function(data, cb) {
-          count++;
-          cb(null, count);
-        }
-      });
-
-      host.listen(function() {
-        post(host, 'test', {key: 'test-key'}, function(err, res, body) {
-          assert.equal(body, '1');
-          post(host, 'test', {key: 'test-key'}, function(err, res, body) {
-            assert.equal(body, '1');
-            setTimeout(function() {
-              post(host, 'test', {key: 'test-key'}, function(err, res, body) {
-                assert.equal(body, '2');
-                host.stopListening();
-                done();
-              });
-            }, 20);
-          });
-        });
-      });
-    });
   });
   describe('#logger', function() {
     it('should be configurable via a config\'s `logger` prop', function() {
@@ -483,22 +297,6 @@ describe('Host', function() {
         logger: logger
       });
       assert.strictEqual(host.logger, logger);
-    });
-  });
-  describe('/type endpoint', function() {
-    it('should return "Host"', function(done) {
-      var host = new Host({
-        silent: true,
-        outputOnListen: false
-      });
-      host.listen(function() {
-        request(host.getUrl() + '/type', function(err, res, body) {
-          assert.isNull(err);
-          assert.equal(body, 'Host');
-          host.stopListening();
-          done();
-        });
-      });
     });
   });
 });

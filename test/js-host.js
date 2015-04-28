@@ -159,7 +159,7 @@ describe('bin/js-host.js', function() {
       });
     });
   });
-  it('can start a manager process which can start/stop hosts', function(done) {
+  it('can start a manager process which can start/host/stop hosts', function(done) {
     var process = child_process.spawn(
       'node', [pathToBin, pathToTestConfig, '--manager', '--json']
     );
@@ -169,7 +169,7 @@ describe('bin/js-host.js', function() {
       var config = JSON.parse(output);
       config.functions = null;
       var manager = new Manager(config);
-      request.post(manager.getUrl() + '/start?config=' + encodeURIComponent(pathToTestConfig), function(err, res, body) {
+      request.post(manager.getUrl() + '/host/start?config=' + encodeURIComponent(pathToTestConfig), function(err, res, body) {
         assert.isNull(err);
         assert.notEqual(body, output);
         var hostJson = JSON.parse(body);
@@ -181,7 +181,7 @@ describe('bin/js-host.js', function() {
         post(host, 'echo', {data: {echo: 'test'}}, function(err, res, body) {
           assert.isNull(err);
           assert.equal(body, 'test');
-          request.post(manager.getUrl() + '/stop?config=' + encodeURIComponent(pathToTestConfig), function(err, res, body) {
+          request.post(manager.getUrl() + '/host/stop?config=' + encodeURIComponent(pathToTestConfig), function(err, res, body) {
             assert.isNull(err);
             assert.deepEqual(JSON.parse(body), hostConfig);
             setTimeout(function() {
@@ -211,7 +211,7 @@ describe('bin/js-host.js', function() {
       var config = JSON.parse(output);
       config.functions = null;
       var manager = new Manager(config);
-      request.post(manager.getUrl() + '/start?config=' + encodeURIComponent(pathToTestConfig), function(err, res, body) {
+      request.post(manager.getUrl() + '/host/start?config=' + encodeURIComponent(pathToTestConfig), function(err, res, body) {
         assert.isNull(err);
         assert.notEqual(body, output);
         var hostJson = JSON.parse(body);
@@ -223,13 +223,13 @@ describe('bin/js-host.js', function() {
         post(host, 'echo', {data: {echo: 'test'}}, function(err, res, body) {
           assert.isNull(err);
           assert.equal(body, 'test');
-          request.post(manager.getUrl() + '/stop?stop-manager-if-last-host&config=' + encodeURIComponent(pathToTestConfig), function(err, res, body) {
+          request.post(manager.getUrl() + '/host/stop?stop-manager-if-last-host&config=' + encodeURIComponent(pathToTestConfig), function(err, res, body) {
             assert.isNull(err);
             assert.deepEqual(JSON.parse(body), hostConfig);
             setTimeout(function() {
               post(host, 'echo', {data: {echo: 'test'}}, function(err, res, body) {
                 assert.instanceOf(err, Error);
-                request.post(manager.getUrl() + '/config', function(err, res, body) {
+                request.post(manager.getUrl() + '/status', function(err, res, body) {
                   assert.instanceOf(err, Error);
                   assert.isTrue(hasExited);
                   done();
@@ -238,6 +238,31 @@ describe('bin/js-host.js', function() {
             }, 50);
           });
         });
+      });
+    });
+  });
+  it('can stop a manager process at the /manager/stop endpoint', function(done) {
+    var process = child_process.spawn(
+      'node', [pathToBin, pathToTestConfig, '--manager', '--json']
+    );
+
+    var hasExited = false;
+    process.once('exit', function() {
+      hasExited = true;
+    });
+
+    process.stdout.once('data', function(data) {
+      var output = data.toString();
+      var config = JSON.parse(output);
+      config.functions = null;
+      var manager = new Manager(config);
+      request.post(manager.getUrl() + '/manager/stop', function(err, res, body) {
+        assert.isNull(err);
+        assert.equal(body, 'Stopping...');
+        setTimeout(function() {
+          assert.isTrue(hasExited);
+          done();
+        }, 20);
       });
     });
   });
