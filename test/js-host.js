@@ -128,7 +128,7 @@ describe('bin/js-host.js', function() {
       });
     });
   });
-  it('can output the complete config of a host', function() {
+  it('can output the config of a host', function() {
     var output = spawnSync(
       'node', [pathToBin, pathToTestConfig, '--config']
     );
@@ -142,7 +142,6 @@ describe('bin/js-host.js', function() {
     assert.equal(obj.config.port, 8008);
     assert.isArray(obj.config.functions);
     assert.equal(obj.config.functions.length, 4);
-    assert.isTrue(obj.config.silent);
   });
   it('can start listening and output the config as JSON', function(done) {
     var process = child_process.spawn(
@@ -157,7 +156,6 @@ describe('bin/js-host.js', function() {
       assert.equal(obj.config.port, 8008);
       assert.isArray(obj.config.functions);
       assert.equal(obj.config.functions.length, 4);
-      assert.isTrue(obj.config.silent);
       process.kill();
       done();
     });
@@ -184,7 +182,6 @@ describe('bin/js-host.js', function() {
       );
       assert.isArray(obj.config.functions);
       assert.equal(obj.config.functions.length, 4);
-      assert.isTrue(obj.config.silent);
       var host = new Host({
         silent: true,
         port: obj.config.port
