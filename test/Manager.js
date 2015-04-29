@@ -13,7 +13,7 @@ var pathToTestConfig = path.join(__dirname, 'test_config', 'config.js');
 var pathToDuplicateConfig = path.join(__dirname, 'test_config', 'duplicate.js');
 
 var post = function(host, funcName, data, cb) {
-  var config = host.output ? JSON.parse(host.output) : host;
+  var config = host.output ? JSON.parse(host.output).config : host;
   // Get around validation issues caused by (de)serialization issues
   config.functions = null;
   // Prevent the logger from adding handlers to the process's emitter
@@ -58,7 +58,7 @@ describe('Manager', function() {
         assert.isNull(err);
         assert.isObject(host);
         var json = JSON.parse(host.output);
-        assert.notEqual(json.port, config.port);
+        assert.notEqual(json.config.port, config.port);
         post(host, 'echo', {data: {echo: 'foo'}}, function(err, res, body) {
           assert.isNull(err);
           assert.equal(body, 'foo');
@@ -81,7 +81,7 @@ describe('Manager', function() {
           assert.equal(res.statusCode, 200);
           var host = JSON.parse(body);
           assert.isTrue(host.started);
-          var config = JSON.parse(host.output);
+          var config = JSON.parse(host.output).config;
           assert.notEqual(config.port, testConfig.port);
           post({port: config.port}, 'echo', {data: {echo: 'test'}}, function(err, res, body) {
             assert.isNull(err);
@@ -328,7 +328,7 @@ describe('Manager', function() {
                 assert.isNull(err);
                 assert.equal(res.statusCode, 200);
                 assert.isUndefined(manager.hosts[pathToTestConfig]);
-                var config = JSON.parse(body);
+                var config = JSON.parse(body).config;
                 assert.notEqual(config.port, testConfig.port);
                 setTimeout(function() {
                   post({port: config.port}, 'echo', {data: {echo: 'test'}}, function(err, res, body) {
@@ -360,7 +360,7 @@ describe('Manager', function() {
                 assert.isNull(err);
                 assert.equal(res.statusCode, 200);
                 assert.isObject(manager.hosts[pathToTestConfig]);
-                var config = JSON.parse(body);
+                var config = JSON.parse(body).config;
                 post({port: config.port}, 'echo', {data: {echo: 'test'}}, function(err, res, body) {
                   assert.isNull(err);
                   assert.equal(body, 'test');
@@ -402,7 +402,7 @@ describe('Manager', function() {
                     assert.isNull(manager.hosts[pathToTestConfig].stopTimeout);
                     host = JSON.parse(body);
                     assert.isFalse(host.started);
-                    var config = JSON.parse(host.output);
+                    var config = JSON.parse(host.output).config;
                     setTimeout(function() {
                       post({port: config.port}, 'echo', {data: {echo: 'test'}}, function(err, res, body) {
                         assert.isNull(err);

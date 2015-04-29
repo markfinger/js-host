@@ -9,6 +9,7 @@ var request = require('request');
 var Host = require('..');
 var Manager = require('../lib/Manager');
 var post = require('./utils').post;
+var packageJson = require('../package');
 
 var pathToBin = path.join(__dirname, '..', 'bin', 'js-host.js');
 var pathToTestConfig = path.join(__dirname, 'test_config', 'config.js');
@@ -30,7 +31,7 @@ describe('bin/js-host.js', function() {
 
     // Wait for stdout, which should indicate the server's running
     process.stdout.once('data', function(data) {
-      assert.equal(data.toString(), 'Host listening at 127.0.0.1:8000\n');
+      assert.equal(data.toString(), 'Host listening at 127.0.0.1:8008\n');
       post(host, 'echo', {data: {echo: 'echo-test'}}, function(err, res, body) {
         assert.isNull(err);
         assert.equal(body, 'echo-test');
@@ -81,7 +82,7 @@ describe('bin/js-host.js', function() {
 
     // Wait for stdout, which should indicate the server's running
     process.stdout.once('data', function(data) {
-      assert.equal(data.toString(), 'Host listening at 127.0.0.1:8000\n');
+      assert.equal(data.toString(), 'Host listening at 127.0.0.1:8008\n');
       post(host, 'error', function(err, res, body) {
         assert.equal(res.statusCode, 500);
         assert.include(body, 'Error: Error function');
@@ -116,7 +117,7 @@ describe('bin/js-host.js', function() {
 
     // Wait for stdout, which should indicate the server's running
     process.stdout.once('data', function(data) {
-      assert.equal(data.toString(), 'Host listening at 127.0.0.1:8000\n');
+      assert.equal(data.toString(), 'Host listening at 127.0.0.1:8008\n');
       post(host, 'error_async', function(err, res, body) {
         assert.instanceOf(err, Error);
         setTimeout(function() {
@@ -132,15 +133,16 @@ describe('bin/js-host.js', function() {
       'node', [pathToBin, pathToTestConfig, '--config']
     );
 
-    var config = JSON.parse(output.stdout.toString());
+    var obj = JSON.parse(output.stdout.toString());
 
-    assert.isObject(config);
-
-    assert.equal(config.address, '127.0.0.1');
-    assert.equal(config.port, 8000);
-    assert.isArray(config.functions);
-    assert.equal(config.functions.length, 4);
-    assert.isTrue(config.silent);
+    assert.equal(obj.version, packageJson.version);
+    assert.equal(obj.type, 'Host');
+    assert.isObject(obj.config);
+    assert.equal(obj.config.address, '127.0.0.1');
+    assert.equal(obj.config.port, 8008);
+    assert.isArray(obj.config.functions);
+    assert.equal(obj.config.functions.length, 4);
+    assert.isTrue(obj.config.silent);
   });
   it('can start listening and output the config as JSON', function(done) {
     var process = child_process.spawn(
@@ -148,12 +150,14 @@ describe('bin/js-host.js', function() {
     );
 
     process.stdout.once('data', function(data) {
-      var config = JSON.parse(data.toString());
-      assert.equal(config.address, '127.0.0.1');
-      assert.equal(config.port, 8000);
-      assert.isArray(config.functions);
-      assert.equal(config.functions.length, 4);
-      assert.isTrue(config.silent);
+      var obj = JSON.parse(data.toString());
+      assert.equal(obj.version, packageJson.version);
+      assert.equal(obj.type, 'Host');
+      assert.equal(obj.config.address, '127.0.0.1');
+      assert.equal(obj.config.port, 8008);
+      assert.isArray(obj.config.functions);
+      assert.equal(obj.config.functions.length, 4);
+      assert.isTrue(obj.config.silent);
       process.kill();
       done();
     });
@@ -165,23 +169,25 @@ describe('bin/js-host.js', function() {
 
     var testConfig = require(pathToTestConfig);
 
-    assert.equal(testConfig.port, 8000);
+    assert.equal(testConfig.port, 8008);
 
     process.stdout.once('data', function(data) {
-      var config = JSON.parse(data.toString());
-      assert.equal(config.address, '127.0.0.1');
-      assert.equal(config.port, '8080');
+      var obj = JSON.parse(data.toString());
+      assert.equal(obj.version, packageJson.version);
+      assert.equal(obj.type, 'Host');
+      assert.equal(obj.config.address, '127.0.0.1');
+      assert.equal(obj.config.port, '8080');
       assert.notEqual(
         // Ensure both ports are coerced to the same type
-        '' + config.port,
+        '' + obj.config.port,
         '' + testConfig.port
       );
-      assert.isArray(config.functions);
-      assert.equal(config.functions.length, 4);
-      assert.isTrue(config.silent);
+      assert.isArray(obj.config.functions);
+      assert.equal(obj.config.functions.length, 4);
+      assert.isTrue(obj.config.silent);
       var host = new Host({
         silent: true,
-        port: config.port
+        port: obj.config.port
       });
       assert.equal(host.getUrl(), 'http://127.0.0.1:8080');
       post(host, 'echo', {data: {echo: 'foo'}}, function(err, res, body) {
@@ -199,15 +205,15 @@ describe('bin/js-host.js', function() {
 
     process.stdout.once('data', function(data) {
       var output = data.toString();
-      var config = JSON.parse(output);
-      config.functions = null;
-      var manager = new Manager(config);
+      var obj = JSON.parse(output);
+      obj.config.functions = null;
+      var manager = new Manager(obj.config);
       request.post(manager.getUrl() + '/host/start?config=' + encodeURIComponent(pathToTestConfig), function(err, res, body) {
         assert.isNull(err);
         assert.notEqual(body, output);
-        var hostJson = JSON.parse(body);
-        assert.isTrue(hostJson.started);
-        var hostConfig = JSON.parse(hostJson.output);
+        var obj = JSON.parse(body);
+        assert.isTrue(obj.started);
+        var hostConfig = JSON.parse(obj.output).config;
         assert.equal(hostConfig.address, '127.0.0.1');
         assert.isNumber(hostConfig.port);
         var host = new Host(_.omit(hostConfig, 'functions'));
@@ -216,7 +222,7 @@ describe('bin/js-host.js', function() {
           assert.equal(body, 'test');
           request.post(manager.getUrl() + '/host/stop?config=' + encodeURIComponent(pathToTestConfig), function(err, res, body) {
             assert.isNull(err);
-            assert.deepEqual(JSON.parse(body), hostConfig);
+            assert.deepEqual(JSON.parse(body).config, hostConfig);
             setTimeout(function() {
               post(host, 'echo', {data: {echo: 'test'}}, function(err, res, body) {
                 assert.instanceOf(err, Error);
@@ -241,7 +247,7 @@ describe('bin/js-host.js', function() {
 
     process.stdout.once('data', function(data) {
       var output = data.toString();
-      var config = JSON.parse(output);
+      var config = JSON.parse(output).config;
       config.functions = null;
       var manager = new Manager(config);
       request.post(manager.getUrl() + '/host/start?config=' + encodeURIComponent(pathToTestConfig), function(err, res, body) {
@@ -249,7 +255,7 @@ describe('bin/js-host.js', function() {
         assert.notEqual(body, output);
         var hostJson = JSON.parse(body);
         assert.isTrue(hostJson.started);
-        var hostConfig = JSON.parse(hostJson.output);
+        var hostConfig = JSON.parse(hostJson.output).config;
         assert.equal(hostConfig.address, '127.0.0.1');
         assert.isNumber(hostConfig.port);
         var host = new Host(_.omit(hostConfig, 'functions'));
@@ -258,7 +264,7 @@ describe('bin/js-host.js', function() {
           assert.equal(body, 'test');
           request.post(manager.getUrl() + '/host/stop?stop-manager-if-last-host&config=' + encodeURIComponent(pathToTestConfig), function(err, res, body) {
             assert.isNull(err);
-            assert.deepEqual(JSON.parse(body), hostConfig);
+            assert.deepEqual(JSON.parse(body), JSON.parse(hostJson.output));
             setTimeout(function() {
               post(host, 'echo', {data: {echo: 'test'}}, function(err, res, body) {
                 assert.instanceOf(err, Error);
@@ -286,7 +292,7 @@ describe('bin/js-host.js', function() {
 
     process.stdout.once('data', function(data) {
       var output = data.toString();
-      var config = JSON.parse(output);
+      var config = JSON.parse(output).config;
       config.functions = null;
       var manager = new Manager(config);
       request.post(manager.getUrl() + '/manager/stop', function(err, res, body) {

@@ -1,5 +1,5 @@
 module.exports = {
-  port: 8000,
+  port: 8008,
   silent: true,
   functions: {
     echo: require('../test_functions/echo'),

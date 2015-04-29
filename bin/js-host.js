@@ -12,11 +12,11 @@ var argv = require('yargs')
   })
   .option('c', {
     alias: 'config',
-    description: 'Output the host\'s config as JSON and exit'
+    description: 'Read in the config file and output its generated config as JSON'
   })
   .option('j', {
     alias: 'json',
-    description: 'Output the host\'s config as JSON, once it has started'
+    description: 'Once the process has started, output its generated config as JSON'
   })
   .option('m', {
     alias: 'manager',
@@ -26,6 +26,9 @@ var argv = require('yargs')
     alias: 'detached',
     description: 'Run in a detached process'
   })
+  .version(function() {
+    return require('../package').version;
+  }).alias('v', 'version')
   .help('h').alias('h', 'help')
   .strict()
   .argv;
@@ -57,11 +60,11 @@ if (argv.detached) {
   runAsDetachedProcess = true;
 }
 
-var host;
+var server;
 if (argv.manager) {
-  host = new Manager(config);
+  server = new Manager(config);
 } else {
-  host = new Host(config);
+  server = new Host(config);
 }
 
 if (argv.port !== undefined) {
@@ -69,24 +72,20 @@ if (argv.port !== undefined) {
 }
 
 if (argv.config) {
-  console.log(
-    JSON.stringify(
-      host.getSerializableConfig()
-    )
-  );
-  return;
+  var status = JSON.stringify(server.getStatus());
+  return console.log(status);
 }
 
 var onListen;
 if (argv.json) {
   config.outputOnListen = false;
-  onListen = function(host) {
-    console.log(JSON.stringify(host.getSerializableConfig()));
+  onListen = function(server) {
+    console.log(JSON.stringify(server.getStatus()));
   };
 }
 
 if (!runAsDetachedProcess) {
-  return host.listen(onListen);
+  return server.listen(onListen);
 }
 
 // Run the host/manager in a detached process which is called
@@ -105,7 +104,7 @@ var stdoutTail;
 var stderrTail;
 var detached;
 
-var expectedOutput = JSON.stringify(host.config);
+var expectedOutput = JSON.stringify(server.getStatus());
 
 var onOutput = function(output) {
   output = output.toString().trim();
