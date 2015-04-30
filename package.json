@@ -33,6 +33,7 @@
   },
   "scripts": {
     "test": "mocha",
+    "test-bail": "mocha --bail",
     "test-debug": "mocha debug"
   }
 }

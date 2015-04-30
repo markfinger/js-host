@@ -57,6 +57,7 @@ describe('Manager', function() {
       manager.startHost(pathToTestConfig, function(err, host) {
         assert.isNull(err);
         assert.isObject(host);
+        assert.isString(host.logfile);
         var json = JSON.parse(host.output);
         assert.notEqual(json.config.port, config.port);
         post(host, 'echo', {data: {echo: 'foo'}}, function(err, res, body) {
@@ -81,6 +82,8 @@ describe('Manager', function() {
           assert.equal(res.statusCode, 200);
           var host = JSON.parse(body);
           assert.isTrue(host.started);
+          assert.isString(host.logfile);
+          assert.equal(host.config, pathToTestConfig);
           var config = JSON.parse(host.output).config;
           assert.notEqual(config.port, testConfig.port);
           post({port: config.port}, 'echo', {data: {echo: 'test'}}, function(err, res, body) {
@@ -104,6 +107,7 @@ describe('Manager', function() {
       manager.getHost(pathToTestConfig, function(err, host, started) {
         assert.isNull(err);
         assert.isObject(host);
+        assert.isString(host.logfile);
         assert.isTrue(started);
         var json = JSON.parse(host.output);
         assert.notEqual(json.port, config.port);
