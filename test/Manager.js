@@ -4,10 +4,10 @@ var path = require('path');
 var assert = require('chai').assert;
 var _ = require('lodash');
 var request = require('request');
-var packageJson = require('../package.json');
 var Manager = require('../lib/Manager');
 var Host = require('../lib/Host');
 var utils = require('./utils');
+var version = require('../package').version;
 
 var pathToTestConfig = path.join(__dirname, 'test_config', 'config.js');
 var pathToDuplicateConfig = path.join(__dirname, 'test_config', 'duplicate.js');
@@ -446,7 +446,7 @@ describe('Manager', function() {
           assert.equal(status.type, 'Manager');
           var config = status.config;
           assert.isDefined(status.version);
-          assert.equal(status.version, packageJson.version);
+          assert.equal(status.version, version);
           assert.isUndefined(status.logger);
           assert.isObject(config);
           assert.equal(config.address, manager.config.address);

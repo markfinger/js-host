@@ -1,19 +1,22 @@
 'use strict';
 
+var fs = require('fs');
 var path = require('path');
 var assert = require('chai').assert;
 var child_process = require('child_process');
 var _ = require('lodash');
 var spawnSync = require('spawn-sync'); // node 0.10.x support
 var request = require('request');
+var tmp = require('tmp');
 var Host = require('..');
 var Manager = require('../lib/Manager');
 var post = require('./utils').post;
-var packageJson = require('../package');
+var version = require('../package').version;
 
 var pathToBin = path.join(__dirname, '..', 'bin', 'js-host.js');
 var pathToTestConfig = path.join(__dirname, 'test_config', 'config.js');
 var pathToEmptyConfig = path.join(__dirname, 'test_config', 'empty.js');
+var pathToLogfileConfig = path.join(__dirname, 'test_config', 'logfile.js');
 
 // Node 0.10.x seems to provide few details when reporting errors across processes,
 // so we need to assume less helpful behaviour when testing it
@@ -135,7 +138,7 @@ describe('bin/js-host.js', function() {
 
     var obj = JSON.parse(output.stdout.toString());
 
-    assert.equal(obj.version, packageJson.version);
+    assert.equal(obj.version, version);
     assert.equal(obj.type, 'Host');
     assert.isObject(obj.config);
     assert.equal(obj.config.address, '127.0.0.1');
@@ -150,7 +153,7 @@ describe('bin/js-host.js', function() {
 
     process.stdout.once('data', function(data) {
       var obj = JSON.parse(data.toString());
-      assert.equal(obj.version, packageJson.version);
+      assert.equal(obj.version, version);
       assert.equal(obj.type, 'Host');
       assert.equal(obj.config.address, '127.0.0.1');
       assert.equal(obj.config.port, 8008);
@@ -171,7 +174,7 @@ describe('bin/js-host.js', function() {
 
     process.stdout.once('data', function(data) {
       var obj = JSON.parse(data.toString());
-      assert.equal(obj.version, packageJson.version);
+      assert.equal(obj.version, version);
       assert.equal(obj.type, 'Host');
       assert.equal(obj.config.address, '127.0.0.1');
       assert.equal(obj.config.port, '8080');
@@ -329,6 +332,42 @@ describe('bin/js-host.js', function() {
       }
       process.kill();
       done();
+    });
+  });
+  it('can write the logger output to a particular file', function(done) {
+    var filename = tmp.fileSync().name;
+
+    var process = child_process.spawn(
+      'node', [pathToBin, pathToLogfileConfig, '--json', '--logfile', filename]
+    );
+
+    var config = require(pathToLogfileConfig);
+
+    var initialOutput;
+
+    process.stderr.on('data', function(data) {
+      throw new Error(data.toString());
+    });
+
+    process.stdout.once('data', function(data) {
+      initialOutput = data.toString();
+      var host = new Host({
+        silent: true,
+        port: config.port
+      });
+      assert.equal(host.getUrl(), 'http://127.0.0.1:8008');
+      post(host, 'echo', {data: {echo: 'foo'}}, function(err, res, body) {
+        assert.isNull(err);
+        assert.equal(body, 'foo');
+        setTimeout(function() {
+          var contents = fs.readFileSync(filename).toString();
+          assert.include(contents, 'POST /function/echo');
+          assert.include(contents, 'Calling function "echo"');
+          assert.include(contents, 'Function: echo completed');
+          process.kill();
+          done();
+        }, 50);
+      });
     });
   });
 });

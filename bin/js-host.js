@@ -26,6 +26,10 @@ var argv = require('yargs')
     alias: 'detached',
     description: 'Run in a detached process'
   })
+  .option('l', {
+    alias: 'logfile',
+    description: 'Adds a logger file transport that writes to the specified file'
+  })
   .version(function() {
     return require('../package').version;
   }).alias('v', 'version')
@@ -39,12 +43,13 @@ var child_process = require('child_process');
 var absolutePath = require('absolute-path'); // node 0.10.x support
 var tmp = require('tmp');
 var _ = require('lodash');
+var winston = require('winston');
 var Host = require('../lib/Host');
 var Manager = require('../lib/Manager');
 
 var configFile = argv._[0];
 
-if (!absolutePath(configFile )) {
+if (!absolutePath(configFile)) {
   configFile = path.join(process.cwd(), configFile);
 }
 
@@ -69,6 +74,25 @@ if (argv.manager) {
 
 if (argv.port !== undefined) {
   config.port = argv.port;
+}
+
+if (argv['logfile']) {
+  var logFile = argv.logfile;
+  if (!_.isString(logFile)) {
+    throw new Error('-l --logfile should only be specified once');
+  }
+  if (!absolutePath(logFile)) {
+    logFile = path.join(process.cwd(), logFile);
+  }
+  server.logger.add(winston.transports.File, {
+    filename: logFile,
+    handleExceptions: true,
+    colorize: true,
+    timestamp: true,
+    prettyPrint: true,
+    showLevel: true,
+    json: false
+  });
 }
 
 if (argv.config) {
@@ -121,10 +145,10 @@ var onOutput = function(output) {
 stdoutTail = child_process.spawn('tail', ['-f', stdoutFile]);
 stderrTail = child_process.spawn('tail', ['-f', stderrFile]);
 
-stdoutTail.stdout.on('data', onOutput);
-stdoutTail.stderr.on('data', onOutput);
-stderrTail.stdout.on('data', onOutput);
-stderrTail.stderr.on('data', onOutput);
+stdoutTail.stdout.once('data', onOutput);
+stdoutTail.stderr.once('data', onOutput);
+stderrTail.stdout.once('data', onOutput);
+stderrTail.stderr.once('data', onOutput);
 
 var command = _.first(process.argv);
 var args = _.rest(process.argv);

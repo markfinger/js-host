@@ -9,47 +9,42 @@ describe('Func', function() {
       assert.isFunction(Func);
     });
     it('should accept an object and initialise properly', function() {
-      var obj = {
-        name: 'echo',
-        handler: function() {}
-      };
-      var func = new Func(obj);
+      var echo = function() {};
+      var func = new Func('echo', echo);
       assert.equal(func.name, 'echo');
-      assert.strictEqual(func.handler, obj.handler);
+      assert.strictEqual(func.handler, echo);
     });
   });
   describe('#name', function() {
     it('should be validated', function() {
-      new Func({
-        name: 'test', handler: function() {}, cacheTimeout: null
-      });
+      new Func('test', function() {});
       assert.throws(
         function() {
-          new Func({});
+          new Func();
         },
         '"undefined" is not a valid function name'
       );
       assert.throws(
         function() {
-          new Func({name: undefined});
+          new Func(undefined);
         },
         '"undefined" is not a valid function name'
       );
       assert.throws(
         function() {
-          new Func({name: null});
+          new Func(null);
         },
         '"null" is not a valid function name'
       );
       assert.throws(
         function() {
-          new Func({name: false});
+          new Func(false);
         },
         '"false" is not a valid function name'
       );
       assert.throws(
         function() {
-          new Func({name: ''});
+          new Func('');
         },
         '"" is not a valid function name'
       );
@@ -57,18 +52,16 @@ describe('Func', function() {
   });
   describe('#handler', function() {
     it('should be validated', function() {
-      new Func({
-        name: 'test', handler: function() {}, cacheTimeout: null
-      });
+      new Func('test', function() {});
       assert.throws(
         function() {
-          new Func({name: 'test'});
+          new Func('test');
         },
         'Function handlers must be functions'
       );
       assert.throws(
         function() {
-          new Func({name: 'test', handler: {}});
+          new Func('test', {});
         },
         'Function handlers must be functions'
       );
@@ -79,31 +72,22 @@ describe('Func', function() {
       var context = {};
       var data = {};
 
-      var func = new Func({
-        name: 'test',
-        handler: function(_data, cb) {
-          assert.strictEqual(this, context);
-          assert.strictEqual(_data, data);
-          assert.isFunction(cb);
-          done();
-        }
+      var func = new Func('test', function(_data, cb) {
+        assert.strictEqual(this, context);
+        assert.strictEqual(_data, data);
+        assert.isFunction(cb);
+        done();
       });
 
       func.call(context, data, function(){});
     });
     it('should convert all function output to strings', function(done) {
-      var object = new Func({
-        name: 'test',
-        handler: function(data, cb) {
-          cb(null, {foo: [20]});
-        }
+      var object = new Func('test', function(data, cb) {
+        cb(null, {foo: [20]});
       });
 
-      var number = new Func({
-        name: 'test',
-        handler: function(data, cb) {
-          cb(null, 10);
-        }
+      var number = new Func('test', function(data, cb) {
+        cb(null, 10);
       });
 
       object.call(null, null, function(err, output) {
@@ -117,32 +101,20 @@ describe('Func', function() {
       });
     });
     it('should produce errors if the output is falsey', function(done) {
-      var _null = new Func({
-        name: 'test',
-        handler: function(data, cb) {
-          cb(null, null);
-        }
+      var _null = new Func('test', function(data, cb) {
+        cb(null, null);
       });
 
-      var _undefined = new Func({
-        name: 'test',
-        handler: function(data, cb) {
-          cb(null, undefined);
-        }
+      var _undefined = new Func('test', function(data, cb) {
+        cb(null, undefined);
       });
 
-      var _false = new Func({
-        name: 'test',
-        handler: function(data, cb) {
-          cb(null, false);
-        }
+      var _false = new Func('test', function(data, cb) {
+        cb(null, false);
       });
 
-      var emptyString = new Func({
-        name: 'test',
-        handler: function(data, cb) {
-          cb(null, '');
-        }
+      var emptyString = new Func('test', function(data, cb) {
+        cb(null, '');
       });
 
       _null.call(null, null, function(err, output) {
@@ -164,13 +136,10 @@ describe('Func', function() {
       });
     });
     it('can complete asynchronously', function(done) {
-      var func = new Func({
-        name: 'test',
-        handler: function(data, cb) {
-          setTimeout(function() {
-            cb(null, 'delayed success');
-          }, 10);
-        }
+      var func = new Func('test', function(data, cb) {
+        setTimeout(function() {
+          cb(null, 'delayed success');
+        }, 10);
       });
       func.call(null, null, function(err, output) {
         assert.isNull(err);

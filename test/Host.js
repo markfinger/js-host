@@ -5,10 +5,10 @@ var fs = require('fs');
 var assert = require('chai').assert;
 var request = require('request');
 var _ = require('lodash');
-var packageJson = require('../package.json');
 var Func = require('../lib/Func');
 var Host = require('../lib/Host');
 var echo = require('./test_functions/echo');
+var version = require('../package').version;
 
 var post = require('./utils').post;
 
@@ -42,26 +42,19 @@ describe('Host', function() {
   describe('#addFunction()', function() {
     it('should accept an object', function() {
       var host = new Host({silent: true});
-      var func = {
-        name: 'test',
-        handler: function() {}
-      };
-      host.addFunction(func);
+      var func = function() {};
+      host.addFunction('test', func);
       assert.isDefined(host.functions.test);
       assert.instanceOf(host.functions.test, Func);
       assert.equal(host.functions.test.name, 'test');
-      assert.strictEqual(host.functions.test.handler, func.handler);
+      assert.strictEqual(host.functions.test.handler, func);
     });
     it('can be called multiple times', function() {
       var host = new Host({silent: true});
-      host.addFunction({
-        name: 'test1',
-        handler: function() {}
-      });
-      host.addFunction({
-        name: 'test2',
-        handler: function() {}
-      });
+      var func1 = function() {};
+      var func2 = function() {};
+      host.addFunction('test1', func1);
+      host.addFunction('test2', func2);
       assert.isDefined(host.functions.test1);
       assert.isDefined(host.functions.test2);
       assert.instanceOf(host.functions.test1, Func);
@@ -70,19 +63,15 @@ describe('Host', function() {
       assert.equal(host.functions.test2.name, 'test2');
       assert.isFunction(host.functions.test1.handler);
       assert.isFunction(host.functions.test2.handler);
+      assert.strictEqual(host.functions.test1.handler, func1);
+      assert.strictEqual(host.functions.test2.handler, func2);
     });
     it('throws an error if a function is added with a conflicting name', function() {
       var host = new Host({silent: true});
-      host.addFunction({
-        name: 'test',
-        handler: function() {}
-      });
+      host.addFunction('test', function() {});
       assert.throws(
         function() {
-          host.addFunction({
-            name: 'test',
-            handler: function() {}
-          });
+          host.addFunction('test', function() {});
         },
         'A function has already been defined with the name "test"'
       );
@@ -162,7 +151,7 @@ describe('Host', function() {
           assert.isObject(status);
           assert.equal(status.type, 'Host');
           assert.isDefined(status.version);
-          assert.equal(status.version, packageJson.version);
+          assert.equal(status.version, version);
           assert.isUndefined(status.logger);
           var config = status.config;
           assert.isObject(config);
@@ -184,17 +173,11 @@ describe('Host', function() {
         silent: true
       });
 
-      host.addFunction({
-        name: 'function1',
-        handler: function(data, cb) {
-          cb(null, 'in handler1');
-        }
+      host.addFunction('function1', function(data, cb) {
+        cb(null, 'in handler1');
       });
-      host.addFunction({
-        name: 'function2',
-        handler: function(data, cb) {
-          cb(null, 'in handler2');
-        }
+      host.addFunction('function2', function(data, cb) {
+        cb(null, 'in handler2');
       });
 
       host.listen(function() {
@@ -226,14 +209,11 @@ describe('Host', function() {
         silent: true
       });
 
-      host.addFunction({
-        name: 'text-test',
-        handler: function(data, cb) {
-          if (data.text !== text) {
-            return cb('data.text does not match');
-          }
-          cb(null, 'success: ' + data.text);
+      host.addFunction('text-test', function(data, cb) {
+        if (data.text !== text) {
+          return cb('data.text does not match');
         }
+        cb(null, 'success: ' + data.text);
       });
 
       host.listen(function() {
@@ -250,26 +230,17 @@ describe('Host', function() {
         silent: true
       });
 
-      host.addFunction({
-        name: 'done-x1',
-        handler: function(data, cb) {
-          cb(null, 'some success');
-        }
+      host.addFunction('done-x1', function(data, cb) {
+        cb(null, 'some success');
       });
-      host.addFunction({
-        name: 'done-x2',
-        handler: function(data, cb) {
-          cb('x2');
-          cb(null, 'some success x2');
-        }
+      host.addFunction('done-x2', function(data, cb) {
+        cb('x2');
+        cb(null, 'some success x2');
       });
-      host.addFunction({
-        name: 'done-x3',
-        handler: function(data, cb) {
-          cb(null, 'some success x3');
-          cb('x3');
-          cb(null, 'some other success x3');
-        }
+      host.addFunction('done-x3', function(data, cb) {
+        cb(null, 'some success x3');
+        cb('x3');
+        cb(null, 'some other success x3');
       });
 
       host.listen(function() {
