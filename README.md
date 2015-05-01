@@ -183,7 +183,7 @@ the `console` object, eg: it must provide functions named `log`, `error`, `info`
 If you want to pass configuration to the function, you can add extra properties to the config
 object, and then access them in your function via the `this` binding. For example
 
-```
+```javascript
 module.exports = {
   functions: {
     some_func: function(data, cb) {
@@ -196,6 +196,7 @@ module.exports = {
   }
   production: true
 };
+```
 
 
 Calling functions via the network
