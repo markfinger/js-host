@@ -51,13 +51,13 @@ Functions
 The functions definition of a host config is a simple map which enables network requests to be passed 
 to functions. When a request is matched to a function, the function is called with two arguments:
 
-- `data` is an object generated from deserializing the data sent in the request.
+- `data` is an object generated from deserializing any data sent in the request's body.
 - `cb` is a function which enables you to indicate that your function has either completed successfully,
-  or encountered an error. `cb` assumes that the first argument indicates an error, and the second argument
-  indicates success.
+  or encountered an error. Following the argument pattern typical in function-based languages, `cb` 
+  assumes that the first argument indicates an error, and the second argument indicates success.
 
 
-### Handling success
+### Sending a success response
 
 Once your function has completed successfully, you should pass a value to `cb` as the second
 argument. For example:
@@ -66,9 +66,11 @@ argument. For example:
 cb(null, {status: 'success'});
 ```
 
+If the value provided as the second argument is falsey - `null`, `false`, `undefined`, `0` - the
+host will assume that a mistake was made in your code, and will return an error response. 
+
 Note: the value of the second argument is sent back to the caller as a text response. If the 
-value is an object, it will be serialized to JSON. Types other than objects will be coerced to 
-strings.
+value is an object, it will be serialized to JSON. All non-object types are coerced to strings.
 
 
 ### Handling errors
@@ -76,7 +78,7 @@ strings.
 You should try to gracefully handle any errors encountered as uncaught errors may cause the host
 to assume the worst and exit immediately. If you encounter an error condition, pass an `Error`
 object to `cb`, and let the host handle it. If you need to execute code that may throw errors,
-use a try/catch, pass the error to the host, and exit your function. For example:
+use a try/catch to pass the error to the host and then exit your function. For example:
 
 ```javascript
 function(data, cb) {
@@ -165,7 +167,7 @@ module.exports = {
 };
 ```
 
-Config objects may possess the following attributes:
+Config objects may possess the following properties:
 
 `functions`: a key/value object with names -> functions.
 
@@ -178,10 +180,33 @@ Config objects may possess the following attributes:
 `logger`: An object which will be used instead of the default logger. The object must provide a similar API to
 the `console` object, eg: it must provide functions named `log`, `error`, `info`, etc.
 
+If you want to pass configuration to the function, you can add extra properties to the config
+object, and then access them in your function via the `this` binding. For example
 
-Calling a function
-------------------
+```
+module.exports = {
+  functions: {
+    some_func: function(data, cb) {
+      if (this.host.config.production) {
+        // ...
+      } else {
+        // ...
+      }
+    }
+  }
+  production: true
+};
+
+
+Calling functions via the network
+---------------------------------
 
 Functions are exposed to POST requests at the `/function/<name>` endpoint.
 
 To send data: set the request's content-type to `application/json` and pass JSON as the request's body.
+
+If the function indicated success, a 200 response will be returned with the function's output as the
+response's text.
+
+If the function returned an error condition, a 500 response will be returned, with the error's stack
+trace as the response's text.
