@@ -4,7 +4,7 @@ var request = require('request');
 var _ = require('lodash');
 
 module.exports = {
-  post: function(host, funcName, opts, cb) {
+  postToHost: function(host, funcName, opts, cb) {
     opts = opts || {};
     if (_.isFunction(opts)) {
       cb = opts;
@@ -19,5 +19,12 @@ module.exports = {
       json: true,
       body: opts.data
     }, cb);
+  },
+  postToManager: function(manager, endpoint, data, cb) {
+    if (_.isFunction(data)) {
+      cb = data;
+      data = {};
+    }
+    request.post({url: manager.getUrl() + endpoint, body: data, json: true}, cb);
   }
 };

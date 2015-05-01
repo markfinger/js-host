@@ -10,7 +10,7 @@ var Host = require('../lib/Host');
 var echo = require('./test_functions/echo');
 var version = require('../package').version;
 
-var post = require('./utils').post;
+var postToHost = require('./utils').postToHost;
 
 describe('Host', function() {
   describe('constructor', function() {
@@ -181,14 +181,14 @@ describe('Host', function() {
       });
 
       host.listen(function() {
-        post(host, 'foo', function(err, res, body) {
+        postToHost(host, 'foo', function(err, res, body) {
           assert.equal(res.statusCode, '404');
           assert.equal(body, 'Not found. Unknown function "foo"');
-          post(host, 'function1', function(err, res, body) {
+          postToHost(host, 'function1', function(err, res, body) {
             assert.equal(body, 'in handler1');
-            post(host, 'function2', function(err, res, body) {
+            postToHost(host, 'function2', function(err, res, body) {
               assert.equal(body, 'in handler2');
-              post(host, 'bar', function(err, res, body) {
+              postToHost(host, 'bar', function(err, res, body) {
                 assert.equal(res.statusCode, '404');
                 assert.equal(body, 'Not found. Unknown function "bar"');
                 host.stopListening();
@@ -217,7 +217,7 @@ describe('Host', function() {
       });
 
       host.listen(function() {
-        post(host, 'text-test', {data: {text: text}}, function(err, res, body) {
+        postToHost(host, 'text-test', {data: {text: text}}, function(err, res, body) {
           assert.equal(body, 'success: ' + text);
           host.stopListening();
           done();
@@ -244,13 +244,13 @@ describe('Host', function() {
       });
 
       host.listen(function() {
-        post(host, 'done-x1', function(err, res, body) {
+        postToHost(host, 'done-x1', function(err, res, body) {
           assert.equal(res.statusCode, 200);
           assert.include(body, 'some success');
-          post(host, 'done-x2', function(err, res, body) {
+          postToHost(host, 'done-x2', function(err, res, body) {
             assert.equal(res.statusCode, 500);
             assert.include(body, 'x2');
-            post(host, 'done-x3', function(err, res, body) {
+            postToHost(host, 'done-x3', function(err, res, body) {
               assert.equal(res.statusCode, 200);
               assert.include(body, 'some success x3');
               host.stopListening();
