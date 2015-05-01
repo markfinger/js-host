@@ -280,7 +280,7 @@ describe('bin/js-host.js', function() {
                       done();
                     });
                   });
-                }, 200);
+                }, 250);
               });
             });
           });
