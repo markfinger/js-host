@@ -209,5 +209,5 @@ To send data: set the request's content-type to `application/json` and pass JSON
 If the function indicated success, a 200 response will be returned with the function's output as the
 response's text.
 
-If the function returned an error condition, a 500 response will be returned, with the error's stack
-trace as the response's text.
+If the function returned an error condition, a 500 response will be returned, with a stack trace as 
+the response's text.
