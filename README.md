@@ -82,8 +82,8 @@ The following arguments are accepted:
 | -l | --logfile | Adds a file transport to the process's logger which will write to the specified file |
 | -m | --manager | Run a manager process, rather than a host |
 | -d | --detached | Run in a detached process |
-| -v | --version | Output the version package's version |
-| -h | --help | Output CLI help information |
+| -v | --version | Output the package's version |
+| -h | --help | Output help text |
 
 
 ### Debugging hosts
