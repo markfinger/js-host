@@ -33,6 +33,7 @@
     "spawn-sync": "^1.0.6"
   },
   "scripts": {
-    "test": "mocha"
+    "test": "mocha",
+    "test-bail": "mocha --bail"
   }
 }

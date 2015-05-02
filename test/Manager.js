@@ -367,14 +367,28 @@ describe('Manager', function() {
           host.connections.push('test3');
           postToManager(manager, '/host/disconnect', {config: pathToTestConfig, connection: 'test1'}, function(err, res, body) {
             assert.isNull(err);
-            assert.equal(body, 'Disconnected');
+
+            assert.isObject(body);
+            assert.equal(body.config, pathToTestConfig);
+            assert.isTrue(body.started);
+            assert.equal(body.status, 'Disconnected');
+            assert.isNull(body.stopTimeout);
+
             assert.equal(host.connections.length, 2);
             assert.include(host.connections, 'test2');
             assert.include(host.connections, 'test3');
             postToManager(manager, '/host/disconnect', {config: pathToTestConfig, connection: 'test2'}, function(err, res, body) {
               assert.isNull(err);
+
+              assert.isObject(body);
+              assert.equal(body.config, pathToTestConfig);
+              assert.isTrue(body.started);
+              assert.equal(body.status, 'Disconnected');
+              assert.isNull(body.stopTimeout);
+
               assert.equal(host.connections.length, 1);
               assert.equal(host.connections[0], 'test3');
+
               host.process.kill();
               manager.stopListening();
               done();
@@ -400,7 +414,13 @@ describe('Manager', function() {
           assert.isNull(host.stopTimeout);
           postToManager(manager, '/host/disconnect', {config: pathToTestConfig, connection: 'test'}, function(err, res, body) {
             assert.isNull(err);
-            assert.equal(body, 'Disconnected. Stopping host in 200ms');
+
+            assert.isObject(body);
+            assert.equal(body.config, pathToTestConfig);
+            assert.isTrue(body.started);
+            assert.equal(body.status, 'Disconnected. Stopping host in 200ms');
+            assert.equal(body.stopTimeout, 200);
+
             assert.equal(host.connections.length, 0);
             assert.isNotNull(host.stopTimeout);
             postToManagedHost({port: config.port}, 'counter', function(err, res, body) {
@@ -431,7 +451,6 @@ describe('Manager', function() {
 
       manager.exitIfNoConnections = function() {
         assert.isTrue(hasDisconnected);
-        debugger
         assert.equal(Object.keys(this.hosts).length, 0);
         manager.stopListening();
         done();
@@ -445,7 +464,13 @@ describe('Manager', function() {
           assert.isNull(host.stopTimeout);
           postToManager(manager, '/host/disconnect', {config: pathToTestConfig, connection: 'test'}, function(err, res, body) {
             assert.isNull(err);
-            assert.equal(body, 'Disconnected. Stopping host in 200ms');
+
+            assert.isObject(body);
+            assert.equal(body.config, pathToTestConfig);
+            assert.isTrue(body.started);
+            assert.equal(body.status, 'Disconnected. Stopping host in 200ms');
+            assert.equal(body.stopTimeout, 200);
+
             assert.equal(host.connections.length, 0);
             assert.isNotNull(host.stopTimeout);
             hasDisconnected = true;
@@ -475,7 +500,13 @@ describe('Manager', function() {
       manager.listen(function() {
         postToManager(manager, '/host/disconnect', {config: pathToTestConfig, connection: 'test'}, function(err, res, body) {
           assert.equal(res.statusCode, 200);
-          assert.equal(body, 'Host has already stopped');
+
+          assert.isObject(body);
+          assert.equal(body.config, pathToTestConfig);
+          assert.isFalse(body.started);
+          assert.equal(body.status, 'Host has already stopped');
+          assert.isNull(body.stopTimeout);
+
           manager.stopListening();
           done();
         });

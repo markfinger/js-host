@@ -267,10 +267,18 @@ describe('bin/js-host.js', function() {
             assert.isString(connection2);
             postToManager(manager, '/host/disconnect', {config: pathToTestConfig, connection: connection1}, function(err, res, body) {
               assert.isNull(err);
-              assert.equal(body, 'Disconnected');
+              assert.isObject(body);
+              assert.equal(body.config, pathToTestConfig);
+              assert.isTrue(body.started);
+              assert.equal(body.status, 'Disconnected');
+              assert.isNull(body.stopTimeout);
               postToManager(manager, '/host/disconnect', {config: pathToTestConfig, connection: connection2}, function(err, res, body) {
                 assert.isNull(err);
-                assert.equal(body, 'Disconnected. Stopping host in 200ms');
+                assert.isObject(body);
+                assert.equal(body.config, pathToTestConfig);
+                assert.isTrue(body.started);
+                assert.equal(body.status, 'Disconnected. Stopping host in 200ms');
+                assert.equal(body.stopTimeout, 200);
                 setTimeout(function () {
                   postToHost(host, 'echo', {data: {echo: 'test'}}, function (err, res, body) {
                     assert.instanceOf(err, Error);
