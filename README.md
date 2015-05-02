@@ -74,8 +74,8 @@ node_modules/.bin/js-host host.config.js
 
 The following arguments are accepted:
 
-| Arg | Alias | Description |
-| --- | ----- | ----------- |
+| &nbsp; | Alias | Description |
+| ------ | ----- | ----------- |
 | -c | --config | Read in the config file and output its generated config as JSON |
 | -j | --json | Once the process has started, output its generated config as JSON |
 | -p | --port | Override the config's port and run the process at the number specified |
