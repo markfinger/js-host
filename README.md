@@ -12,6 +12,18 @@ tends to lag as they typically spawn new environments on every call.
 Using a persistent JavaScript environment enables massive performance improvements as we can persist 
 state across calls and avoid the overhead of spawning environments.
 
+- [Installation](#installation)
+- [Basic usage](#basic-usage)
+- [CLI usage](#cli-usage)
+  - [Debugging hosts](#debugging-hosts)
+- [Documentation](#documentation)
+  - [Functions](#functions)
+    - [Sending a success response](#sending-a-success-response)
+    - [Handling errors](#handling-errors)
+    - [Accessing the host from a function](#accessing-the-host-from-a-function)
+  - [Config files](#config-files)
+  - [Calling functions via the network](#calling-functions-via-the-network)
+
 
 Installation
 ------------
