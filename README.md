@@ -45,8 +45,45 @@ node_modules/.bin/js-host host.config.js
 And call `hello_world` by sending a POST request to `http://127.0.0.1:9009/function/hello_world`.
 
 
-Functions
+CLI usage
 ---------
+
+A `js-host` file is placed into `node_modules/.bin` which allows you to interact with library at
+a high-level. Most of the interactions will require you to specify a path to a config file.
+
+You can start a host process by invoking `js-host` with a config file. For example
+
+```bash
+node_modules/.bin/js-host host.config.js
+```
+
+The following arguments are accepted:
+
+| Argument | Alias | Description |
+| -------- | ----- | ----------- |
+| -c | --config | Read in the config file and output its generated config as JSON |
+| -j | --json | Once the process has started, output its generated config as JSON |
+| -p | --port | Override the config's port and run the process at the number specified |
+| -l | --logfile | Adds a file transport to the process's logger which will write to the specified file |
+| -m | --manager | Run a manager process, rather than a host |
+| -d | --detached | Run in a detached process |
+
+### Debugging hosts
+
+If you want run a host with an interactive debugger, you should start the host with 
+[Node's debugger](https://nodejs.org/api/debugger.html). For example
+
+```bash
+node debug node_modules/.bin/js-host host.config.js
+```
+
+Place a `debugger` statement where you want to block the process and inspect the environment.
+
+
+Documentation
+-------------
+
+### Functions
 
 The functions definition of a host config is a simple map which enables network requests to be passed 
 to functions. When a request is matched to a function, the function is called with two arguments:
@@ -57,7 +94,7 @@ to functions. When a request is matched to a function, the function is called wi
   assumes that the first argument indicates an error, and the second argument indicates success.
 
 
-### Sending a success response
+#### Sending a success response
 
 Once your function has completed successfully, you should pass a value to `cb` as the second
 argument. For example:
@@ -73,7 +110,7 @@ Note: the value of the second argument is sent back to the caller as a text resp
 value is an object, it will be serialized to JSON. All non-object types are coerced to strings.
 
 
-### Handling errors
+#### Handling errors
 
 You should try to gracefully handle any errors encountered as uncaught errors may cause the host
 to assume the worst and exit immediately. If you encounter an error condition, pass an `Error`
@@ -109,7 +146,7 @@ By using Error objects, the host is able to provide an accurate stack trace, ind
 of the error.
 
 
-### Accessing the host from a function
+#### Accessing the host from a function
 
 Functions can access the host via `this.host`. For example:
 
@@ -151,8 +188,7 @@ Note: the `this` binding of your function is generated per-request, hence any va
 the `this` object will not be passed along to other requests.
 
 
-Config files
-------------
+### Config files
 
 Config files are simply JS files which export an object, for example:
 
@@ -199,8 +235,7 @@ module.exports = {
 ```
 
 
-Calling functions via the network
----------------------------------
+### Calling functions via the network
 
 Functions are exposed to POST requests at the `/function/<name>` endpoint.
 
