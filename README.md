@@ -14,9 +14,9 @@ state across calls and avoid the overhead of spawning environments.
 
 - [Installation](#installation)
 - [Basic usage](#basic-usage)
-- [CLI usage](#cli-usage)
-  - [Debugging hosts](#debugging-hosts)
 - [Documentation](#documentation)
+  - [CLI usage](#cli-usage)
+  - [Debugging hosts](#debugging-hosts)
   - [Functions](#functions)
     - [Sending a success response](#sending-a-success-response)
     - [Handling errors](#handling-errors)
@@ -57,8 +57,11 @@ node_modules/.bin/js-host host.config.js
 And call `hello_world` by sending a POST request to `http://127.0.0.1:9009/function/hello_world`.
 
 
-CLI usage
----------
+Documentation
+-------------
+
+
+### CLI usage
 
 A `js-host` file is placed into `node_modules/.bin` which allows you to interact with library at
 a high-level. Most of the interactions will require you to specify a path to a config file.
@@ -80,6 +83,7 @@ The following arguments are accepted:
 | -m | --manager | Run a manager process, rather than a host |
 | -d | --detached | Run in a detached process |
 
+
 ### Debugging hosts
 
 If you want run a host with an interactive debugger, you should start the host with 
@@ -91,9 +95,6 @@ node debug node_modules/.bin/js-host host.config.js
 
 Place a `debugger` statement where you want to block the process and inspect the environment.
 
-
-Documentation
--------------
 
 ### Functions
 
