@@ -257,8 +257,24 @@ output streamed to files, you are strongly recommended to define the `logger` pr
 config file. 
 
 Interally, js-host uses [winston](https://github.com/winstonjs/winston) as the default logger. If 
-you define the `logger` property of your config as a winston instance, js-host will use your instance
-instead of its own.
+you define the `logger` property of your config, js-host will use your logger instead of its own. 
+For example
+
+```javascript
+var winston = require('winston');
+
+module.exports = {
+  // ...
+  logger: new winston.Logger({
+    transports: [
+      // Write to stdout and stderr
+      new (winston.transports.Console)(),
+      // Write to a file as well
+      new (winston.transports.File)({ filename: 'somefile.log' })
+    ]
+  });
+};
+```
 
 
 ### Calling functions via the network
