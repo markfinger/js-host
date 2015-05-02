@@ -22,6 +22,7 @@ state across calls and avoid the overhead of spawning environments.
     - [Handling errors](#handling-errors)
     - [Accessing the host from a function](#accessing-the-host-from-a-function)
   - [Config files](#config-files)
+  - [Logging](#logging)
   - [Calling functions via the network](#calling-functions-via-the-network)
 
 
@@ -248,6 +249,16 @@ module.exports = {
   production: true
 };
 ```
+
+### Logging
+
+By default, js-host instances will only write their logs to stdout and stderr. If you want the log 
+output streamed to files, you are strongly recommended to define the `logger` property in your 
+config file. 
+
+Interally, js-host uses [winston](https://github.com/winstonjs/winston) as the default logger. If 
+you define the `logger` property of your config as a winston instance, js-host will use your instance
+instead of its own.
 
 
 ### Calling functions via the network
