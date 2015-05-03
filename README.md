@@ -227,13 +227,17 @@ Config objects may possess the following properties:
 
 `port`: the port number that the host will listen at. Defaults to `9009`.
 
-`requestDataLimit`: The maximum size allowed for a request's body. Defaults to `'10mb'`.
+`requestDataLimit`: the maximum size allowed for a request's body. Defaults to `'10mb'`.
 
-`logger`: An object which will be used instead of the default logger. The object must provide a similar API to
-the `console` object, eg: it must provide functions named `log`, `error`, `info`, etc.
+`logger`: an object which will be used instead of the default logger. The object must provide a 
+similar API to JavaScript's console object, eg: it must provide functions named `log`, `error`, 
+`info`, etc. Defaults to `null`.
 
-If you want to pass configuration to the function, you can add extra properties to the config
-object, and then access them in your function via the `this` binding. For example
+`disconnectTimeout`: the number of milliseconds that a manager will wait before stopping a host
+without any open connections. Defaults to `5 * 1000 // 5 seconds`.
+
+If you want to pass configuration to a function, you can add extra properties to the config object, 
+and then access them in your function via the `this` binding. For example
 
 ```javascript
 module.exports = {
@@ -248,6 +252,20 @@ module.exports = {
   }
   production: true
 };
+```
+
+If you want to use environment-specific config files, you can import a default file and then override
+or add settings specific to that environment. For example
+
+```javascript
+var _ = require('lodash');
+// Import your default config
+var defaultConfig = require('./host.config');
+
+module.exports = _.defaults({
+  // Override the logger with one specific to this environment
+  logger: // ...
+}, defaultConfig);
 ```
 
 ### Logging
@@ -288,3 +306,26 @@ response's text.
 
 If the function returned an error condition, a 500 response will be returned, with a stack trace as 
 the response's text.
+
+
+### Endpoints
+
+Hosts use the following endpoints
+
+| Method | Endpoint | Description |
+| :----- | :------- | :---------- |
+| GET | /status | Returns a JSON object describing the host and environment |
+| POST | /function/:function | Returns the output from the function specified by `:function` |
+
+Managers use the following endpoints
+
+| Method | Endpoint | Description |
+| :----- | :------- | :---------- |
+| GET | /status | Returns a JSON object describing the manager and environment |
+| POST | /manager/stop | Causes the manager to stop every host and then stop its own process |
+| POST | /host/start | Starts a host. Requires a path to a config file |
+| POST | /host/stop | Stops a host. Requires a path to a config file |
+| POST | /host/restart | Restarts a host. Requires a path to a config file |
+| POST | /host/status | Provides information about a host. Requires a path to a config file |
+| POST | /host/connect | Opens a new connection to a host. Requires a path to a config file |
+| POST | /host/disconnect | Closes a connection to a host. Requires a path to a config file and a connection identifier |
