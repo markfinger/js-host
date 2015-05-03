@@ -24,6 +24,7 @@ state across calls and avoid the overhead of spawning environments.
   - [Config files](#config-files)
   - [Logging](#logging)
   - [Calling functions via the network](#calling-functions-via-the-network)
+  - [Endpoints](#endpoints)
 
 
 Installation
@@ -310,22 +311,29 @@ the response's text.
 
 ### Endpoints
 
+Hosts and managers communicate via HTTP and provide a number of endpoints that perform particular
+functions.
+
 Hosts use the following endpoints
 
 | Method | Endpoint | Description |
 | :----- | :------- | :---------- |
 | GET | /status | Returns a JSON object describing the host and environment |
-| POST | /function/:function | Returns the output from the function specified by `:function` |
+| POST | /function/<name> | Returns the output from the function matched to the name |
 
 Managers use the following endpoints
 
 | Method | Endpoint | Description |
 | :----- | :------- | :---------- |
 | GET | /status | Returns a JSON object describing the manager and environment |
-| POST | /manager/stop | Causes the manager to stop every host and then stop its own process |
-| POST | /host/start | Starts a host. Requires a path to a config file |
-| POST | /host/stop | Stops a host. Requires a path to a config file |
-| POST | /host/restart | Restarts a host. Requires a path to a config file |
-| POST | /host/status | Provides information about a host. Requires a path to a config file |
-| POST | /host/connect | Opens a new connection to a host. Requires a path to a config file |
-| POST | /host/disconnect | Closes a connection to a host. Requires a path to a config file and a connection identifier |
+| POST | /manager/stop | Causes the manager to stop every host and then stop its own process. Returns text |
+| POST | /host/start | Starts a host. Returns a JSON object describing the host. [*](#manager-config-prop) |
+| POST | /host/stop | Stops a host. Returns a JSON object describing the host. [*](#manager-config-prop) |
+| POST | /host/restart | Restarts a host. Returns a JSON object describing the host. [*](#manager-config-prop) |
+| POST | /host/status | Provides information about a host. Returns a JSON object indicating if the host is running and all information about it. [*](#manager-config-prop) |
+| POST | /host/connect | Opens a new connection to a host. Returns a JSON object containing the connection identifier and information about the host. [*](#manager-config-prop) |
+| POST | /host/disconnect | Closes a connection to a host. Returns a JSON object indicating if/when the host will be stopped. [*](#manager-config-prop) also requires a connection identifier as a `connection` property |
+
+<a name="manager-config-prop">
+  *: requires a path to a config file to be specified as a `config` property on the request's body
+</a>
