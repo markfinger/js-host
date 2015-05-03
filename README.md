@@ -319,7 +319,7 @@ Hosts use the following endpoints
 | Method | Endpoint | Description |
 | :----- | :------- | :---------- |
 | GET | /status | Returns a JSON object describing the host and environment |
-| POST | /function/<name> | Returns the output from the function matched to the name |
+| POST | /function/<name> | Passes the request's body to the function matched to `<name>` and returns its output |
 
 Managers use the following endpoints
 
@@ -332,7 +332,7 @@ Managers use the following endpoints
 | POST | /host/restart | Restarts a host. Returns a JSON object describing the host. [*](#manager-config-prop) |
 | POST | /host/status | Provides information about a host. Returns a JSON object indicating if the host is running and all information about it. [*](#manager-config-prop) |
 | POST | /host/connect | Opens a new connection to a host. Returns a JSON object containing the connection identifier and information about the host. [*](#manager-config-prop) |
-| POST | /host/disconnect | Closes a connection to a host. Returns a JSON object indicating if/when the host will be stopped. [*](#manager-config-prop) also requires a connection identifier as a `connection` property |
+| POST | /host/disconnect | Closes a connection to a host. Returns a JSON object indicating if/when the host will be stopped. Requires a connection identifier as a `connection` property. [*](#manager-config-prop) |
 
 <a name="manager-config-prop">
   *: requires a path to a config file to be specified as a `config` property on the request's body
