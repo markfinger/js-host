@@ -16,12 +16,11 @@ state across calls and avoid the overhead of spawning environments.
 - [Basic usage](#basic-usage)
 - [Documentation](#documentation)
   - [CLI usage](#cli-usage)
-  - [Debugging hosts](#debugging-hosts)
+  - [Config files](#config-files)
   - [Functions](#functions)
     - [Sending a success response](#sending-a-success-response)
     - [Handling errors](#handling-errors)
     - [Accessing the host from a function](#accessing-the-host-from-a-function)
-  - [Config files](#config-files)
   - [Logging](#logging)
   - [Calling functions via the network](#calling-functions-via-the-network)
   - [Endpoints](#endpoints)
@@ -87,9 +86,6 @@ The following arguments are accepted:
 | -v | --version | Output the package's version |
 | -h | --help | Output help text |
 
-
-### Debugging hosts
-
 If you want run a host with an interactive debugger, you should start the host with 
 [Node's debugger](https://nodejs.org/api/debugger.html). For example
 
@@ -98,6 +94,71 @@ node debug node_modules/.bin/js-host host.config.js
 ```
 
 Place a `debugger` statement where you want to block the process and inspect the environment.
+
+
+### Config files
+
+Config files are simply JS files which export an object, for example:
+
+```javascript
+module.exports = {
+  port: 8080,
+  functions: {
+    my_func: function(data, cb) {
+      // ...
+    }
+  }
+};
+```
+
+Config objects may possess the following properties:
+
+`functions`: a key/value object with names -> functions.
+
+`address`: the address that the host will listen at. Defaults to `'127.0.0.1'`.
+
+`port`: the port number that the host will listen at. Defaults to `9009`.
+
+`requestDataLimit`: the maximum size allowed for a request's body. Defaults to `'10mb'`.
+
+`logger`: an object which will be used instead of the default logger. The object must provide a 
+similar API to JavaScript's console object, eg: it must provide functions named `log`, `error`, 
+`info`, etc. Defaults to `null`.
+
+`disconnectTimeout`: the number of milliseconds that a manager will wait before stopping a host
+without any open connections. Defaults to `5 * 1000 // 5 seconds`.
+
+If you want to pass configuration to a function, you can add extra properties to the config object, 
+and then access them in your function via the `this` binding. For example
+
+```javascript
+module.exports = {
+  functions: {
+    some_func: function(data, cb) {
+      if (this.host.config.production) {
+        // ...
+      } else {
+        // ...
+      }
+    }
+  }
+  production: true
+};
+```
+
+If you want to use environment-specific config files, you can import a default file and then override
+or add settings specific to that environment. For example
+
+```javascript
+var _ = require('lodash');
+// Import your default config
+var defaultConfig = require('./host.config');
+
+module.exports = _.defaults({
+  // Override the logger with one specific to this environment
+  logger: // ...
+}, defaultConfig);
+```
 
 
 ### Functions
@@ -204,70 +265,6 @@ function logData(logger, data) {
 Note: the `this` binding of your function is generated per-request, hence any values that you may add to
 the `this` object will not be passed along to other requests.
 
-
-### Config files
-
-Config files are simply JS files which export an object, for example:
-
-```javascript
-module.exports = {
-  port: 8080,
-  functions: {
-    my_func: function(data, cb) {
-      // ...
-    }
-  }
-};
-```
-
-Config objects may possess the following properties:
-
-`functions`: a key/value object with names -> functions.
-
-`address`: the address that the host will listen at. Defaults to `'127.0.0.1'`.
-
-`port`: the port number that the host will listen at. Defaults to `9009`.
-
-`requestDataLimit`: the maximum size allowed for a request's body. Defaults to `'10mb'`.
-
-`logger`: an object which will be used instead of the default logger. The object must provide a 
-similar API to JavaScript's console object, eg: it must provide functions named `log`, `error`, 
-`info`, etc. Defaults to `null`.
-
-`disconnectTimeout`: the number of milliseconds that a manager will wait before stopping a host
-without any open connections. Defaults to `5 * 1000 // 5 seconds`.
-
-If you want to pass configuration to a function, you can add extra properties to the config object, 
-and then access them in your function via the `this` binding. For example
-
-```javascript
-module.exports = {
-  functions: {
-    some_func: function(data, cb) {
-      if (this.host.config.production) {
-        // ...
-      } else {
-        // ...
-      }
-    }
-  }
-  production: true
-};
-```
-
-If you want to use environment-specific config files, you can import a default file and then override
-or add settings specific to that environment. For example
-
-```javascript
-var _ = require('lodash');
-// Import your default config
-var defaultConfig = require('./host.config');
-
-module.exports = _.defaults({
-  // Override the logger with one specific to this environment
-  logger: // ...
-}, defaultConfig);
-```
 
 ### Logging
 
