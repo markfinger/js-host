@@ -319,7 +319,7 @@ Hosts use the following endpoints
 | Method | Endpoint | Description |
 | :----- | :------- | :---------- |
 | GET | /status | Returns a JSON object describing the host and environment |
-| POST | /function/<name> | Passes the request's body to the function matched to `<name>` and returns its output |
+| POST | /function/&lt;name&gt; | Passes the request's body to the function matched to `<name>` and returns its output |
 
 Managers use the following endpoints
 
