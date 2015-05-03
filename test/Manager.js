@@ -298,6 +298,45 @@ describe('Manager', function() {
         });
       });
     });
+    it('should preserve a host\'s connection list', function(done) {
+      var manager = new Manager({
+        silent: true,
+        outputOnListen: false
+      });
+      manager.listen(function() {
+        postToManager(manager, '/host/start', {config: pathToTestConfig}, function(err, res, body) {
+          assert.isNull(err);
+          assert.isObject(body);
+          assert.isArray(body.connections);
+          assert.equal(body.connections.length, 0);
+          postToManager(manager, '/host/connect', {config: pathToTestConfig}, function(err, res, body) {
+            assert.isNull(err);
+            var connection1 = body.connection;
+            assert.isString(connection1);
+            postToManager(manager, '/host/connect', {config: pathToTestConfig}, function(err, res, body) {
+              assert.isNull(err);
+              var connection2 = body.connection;
+              assert.isString(connection2);
+              postToManager(manager, '/host/restart', {config: pathToTestConfig}, function(err, res, body) {
+                assert.isArray(body.connections);
+                assert.equal(body.connections.length, 2);
+                assert.equal(body.connections[0], connection1);
+                assert.equal(body.connections[1], connection2);
+                postToManager(manager, '/host/restart', {config: pathToTestConfig}, function (err, res, body) {
+                  assert.isArray(body.connections);
+                  assert.equal(body.connections.length, 2);
+                  assert.equal(body.connections[0], connection1);
+                  assert.equal(body.connections[1], connection2);
+                  manager.hosts[pathToTestConfig].process.kill();
+                  manager.stopListening();
+                  done();
+                });
+              });
+            });
+          });
+        });
+      });
+    });
   });
   describe('/host/connect endpoint', function() {
     it('should accept a path to a config file, and provide a unique connection identifier', function(done) {
