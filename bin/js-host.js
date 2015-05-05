@@ -115,53 +115,47 @@ if (!runAsDetachedProcess) {
 // Run the host/manager in a detached process which is called
 // with a similar command + argument combination as this process
 // was. The detached process writes its stdout and stderr to temp
-// files which we watch and look for the expected output before
-// exiting this process
+// files which we poll for content and look for the process's
+// expected output before exiting this process
 
-var stdoutFile = tmp.tmpNameSync();
-var stdout = fs.openSync(stdoutFile, 'a');
-
-var stderrFile = tmp.tmpNameSync();
-var stderr = fs.openSync(stderrFile, 'a');
-
-var stdoutTail;
-var stderrTail;
-var detached;
-
-var expectedOutput = JSON.stringify(server.getStatus());
-
-var onOutput = function(output) {
-  output = output.toString().trim();
-  if (output === expectedOutput) {
-    process.stdout.write(output);
-  } else {
-    process.stderr.write(output);
-    if (detached) detached.kill();
-  }
-  if (stderrTail) stdoutTail.kill();
-  if (stderrTail) stderrTail.kill();
-};
-
-stdoutTail = child_process.spawn('tail', ['-f', stdoutFile]);
-stderrTail = child_process.spawn('tail', ['-f', stderrFile]);
-
-stdoutTail.stdout.once('data', onOutput);
-stdoutTail.stderr.once('data', onOutput);
-stderrTail.stdout.once('data', onOutput);
-stderrTail.stderr.once('data', onOutput);
+var outputFile = tmp.tmpNameSync();
 
 var command = _.first(process.argv);
 var args = _.rest(process.argv);
 args = _.without(args, '-d', '--detached');
 args.push('--json');
 
-detached = child_process.spawn(
+var detached = child_process.spawn(
   command,
   args,
   {
     detached: true,
-    stdio: ['ignore', stdout, stderr]
+    stdio: ['ignore', fs.openSync(outputFile, 'a'), fs.openSync(outputFile, 'a')]
   }
 );
 
-detached.unref();
+var expectedOutput = JSON.stringify(server.getStatus());
+
+var pollDelay = 100;
+
+var pollOutput = function() {
+  var output;
+
+  try {
+    output = fs.readFileSync(outputFile).toString().trim();
+  } catch(err) {}
+
+  if (output) {
+    if (output === expectedOutput) {
+      process.stdout.write(output);
+      return detached.unref();
+    }
+
+    process.stderr.write(output);
+    return detached.kill();
+  }
+
+  setTimeout(pollOutput, pollDelay);
+};
+
+setTimeout(pollOutput, pollDelay);
