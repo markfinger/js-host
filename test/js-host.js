@@ -368,8 +368,10 @@ describe('bin/js-host.js', function() {
       throw new Error(data.toString());
     });
 
+    var hasCompleted = false;
     var hasExited = false;
     child.once('exit', function() {
+      if (hasCompleted) return done();
       hasExited = true;
     });
 
@@ -385,8 +387,8 @@ describe('bin/js-host.js', function() {
         assert.isNull(err);
         assert.equal(body, 'Stopping...');
         setTimeout(function() {
-          assert.isTrue(hasExited);
-          done();
+          if (hasExited) return done();
+          hasCompleted = true;
         }, 20);
       });
     });
