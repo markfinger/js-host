@@ -296,8 +296,10 @@ describe('bin/js-host.js', function() {
       throw new Error(data.toString());
     });
 
+    var hasCompleted = false;
     var hasExited = false;
     child.once('exit', function() {
+      if (hasCompleted) return done();
       hasExited = true;
     });
 
@@ -341,8 +343,8 @@ describe('bin/js-host.js', function() {
                     assert.instanceOf(err, Error);
                     request(manager.getUrl() + '/status', function (err, res, body) {
                       assert.instanceOf(err, Error);
-                      assert.isTrue(hasExited);
-                      done();
+                      if (hasExited) return done();
+                      hasCompleted = true;
                     });
                   });
                 }, 250);
