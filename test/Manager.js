@@ -198,7 +198,7 @@ describe('Manager', function() {
             assert.isUndefined(manager.hosts[pathToTestConfig]);
             manager.stopListening();
             done();
-          }, 50);
+          }, 400);
         });
       });
     });
