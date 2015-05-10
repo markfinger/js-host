@@ -2,7 +2,7 @@
 
 var path = require('path');
 var fs = require('fs');
-var assert = require('chai').assert;
+var assert = require('./utils').assert;
 var request = require('request');
 var _ = require('lodash');
 var Func = require('../lib/Func');

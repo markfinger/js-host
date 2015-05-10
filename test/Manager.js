@@ -1,7 +1,7 @@
 'use strict';
 
 var path = require('path');
-var assert = require('chai').assert;
+var assert = require('./utils').assert;
 var _ = require('lodash');
 var request = require('request');
 var Manager = require('../lib/Manager');

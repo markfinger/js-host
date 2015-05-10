@@ -1,6 +1,6 @@
 'use strict';
 
-var assert = require('chai').assert;
+var assert = require('./utils').assert;
 var Func = require('../lib/Func');
 
 describe('Func', function() {

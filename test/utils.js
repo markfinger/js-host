@@ -1,9 +1,13 @@
 'use strict';
 
+var chai = require('chai');
 var request = require('request');
 var _ = require('lodash');
 
+chai.config.includeStack = true;
+
 module.exports = {
+  assert: chai.assert,
   postToHost: function(host, funcName, opts, cb) {
     opts = opts || {};
     if (_.isFunction(opts)) {

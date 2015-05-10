@@ -2,7 +2,7 @@
 
 var fs = require('fs');
 var path = require('path');
-var assert = require('chai').assert;
+var assert = require('./utils').assert;
 var child_process = require('child_process');
 var _ = require('lodash');
 var spawnSync = require('spawn-sync'); // node 0.10.x support
@@ -230,6 +230,8 @@ describe('bin/js-host.js', function() {
     });
   });
   it('can start a manager process which can start/host/stop hosts', function(done) {
+    this.timeout(5000);
+
     var child = child_process.spawn(
       'node', [pathToBin, pathToTestConfig, '--manager', '--json']
     );
@@ -280,6 +282,8 @@ describe('bin/js-host.js', function() {
     });
   });
   it('can have a manager process automatically exit once the final connection to a host has closed', function(done) {
+    this.timeout(5000);
+
     var child = child_process.spawn(
       'node', [pathToBin, pathToTestConfig, '--manager', '--json']
     );
@@ -350,6 +354,8 @@ describe('bin/js-host.js', function() {
     });
   });
   it('can stop a manager process at the /manager/stop endpoint', function(done) {
+    this.timeout(5000);
+
     var child = child_process.spawn(
       'node', [pathToBin, pathToTestConfig, '--manager', '--json']
     );
