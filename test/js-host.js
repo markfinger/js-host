@@ -27,11 +27,11 @@ var IS_NODE_ZERO_TEN = _.startsWith(process.version, 'v0.10');
 
 describe('bin/js-host.js', function() {
   it('can read in a config and start a properly configured host', function(done) {
-    var process = child_process.spawn(
+    var child = child_process.spawn(
       'node', [pathToBin, pathToTestConfig]
     );
 
-    process.on('error', function(err) {
+    child.on('error', function(err) {
       throw err;
     });
 
@@ -40,7 +40,7 @@ describe('bin/js-host.js', function() {
     );
 
     // Wait for stdout, which should indicate the server's running
-    process.stdout.once('data', function(data) {
+    child.stdout.once('data', function(data) {
       assert.equal(data.toString(), 'Host listening at 127.0.0.1:8008\n');
       postToHost(host, 'echo', {data: {echo: 'echo-test'}}, function(err, res, body) {
         assert.isNull(err);
@@ -55,7 +55,7 @@ describe('bin/js-host.js', function() {
               assert.isNull(err);
               assert.equal(res.statusCode, 500);
               assert.include(body, '`echo` data not provided');
-              process.kill();
+              child.kill();
               done();
             });
           });
@@ -65,22 +65,22 @@ describe('bin/js-host.js', function() {
 
     var stderr = '';
 
-    process.stderr.on('data', function(data) {
+    child.stderr.on('data', function(data) {
       stderr += data.toString();
     });
 
-    process.on('exit', function(data) {
+    child.on('exit', function(data) {
       if (stderr) {
         throw new Error(stderr);
       }
     });
   });
   it('an error thrown within a function will not take down the process', function(done) {
-    var process = child_process.spawn(
+    var child = child_process.spawn(
       'node', [pathToBin, pathToTestConfig]
     );
 
-    process.on('error', function(err) {
+    child.on('error', function(err) {
       throw err;
     });
 
@@ -90,19 +90,19 @@ describe('bin/js-host.js', function() {
 
     var stderr = '';
 
-    process.stderr.on('data', function(data) {
+    child.stderr.on('data', function(data) {
       stderr += data.toString();
     });
 
     // Wait for stdout, which should indicate the server's running
-    process.stdout.once('data', function(data) {
+    child.stdout.once('data', function(data) {
       assert.equal(data.toString(), 'Host listening at 127.0.0.1:8008\n');
       postToHost(host, 'error', function(err, res, body) {
         assert.equal(res.statusCode, 500);
         assert.include(body, 'Error: Error function');
         postToHost(host, 'echo', {data: {echo: 'echo-test'}}, function(err, res, body) {
           assert.equal(body, 'echo-test');
-          process.kill();
+          child.kill();
           assert.include(stderr, 'Error: Error function');
           done();
         });
@@ -110,11 +110,11 @@ describe('bin/js-host.js', function() {
     });
   });
   it('an uncaught error thrown will take down the process', function(done) {
-    var process = child_process.spawn(
+    var child = child_process.spawn(
       'node', [pathToBin, pathToTestConfig]
     );
 
-    process.on('error', function(err) {
+    child.on('error', function(err) {
       throw err;
     });
 
@@ -124,17 +124,17 @@ describe('bin/js-host.js', function() {
 
     var stderr = '';
 
-    process.stderr.on('data', function(data) {
+    child.stderr.on('data', function(data) {
       stderr += data.toString();
     });
 
     var hasExited = false;
-    process.on('exit', function() {
+    child.on('exit', function() {
       hasExited = true;
     });
 
     // Wait for stdout, which should indicate the server's running
-    process.stdout.once('data', function(data) {
+    child.stdout.once('data', function(data) {
       assert.equal(data.toString(), 'Host listening at 127.0.0.1:8008\n');
       postToHost(host, 'error_async', function(err, res, body) {
         assert.instanceOf(err, Error);
@@ -162,15 +162,19 @@ describe('bin/js-host.js', function() {
     assert.equal(obj.config.functions.length, 5);
   });
   it('can start listening and output the config as JSON', function(done) {
-    var process = child_process.spawn(
+    var child = child_process.spawn(
       'node', [pathToBin, pathToTestConfig, '--json']
     );
 
-    process.on('error', function(err) {
+    child.on('error', function(err) {
       throw err;
     });
 
-    process.stdout.once('data', function(data) {
+    child.stderr.on('data', function(data) {
+      throw new Error(data.toString());
+    });
+
+    child.stdout.once('data', function(data) {
       var obj = JSON.parse(data.toString());
       assert.equal(obj.version, version);
       assert.equal(obj.type, 'Host');
@@ -178,24 +182,28 @@ describe('bin/js-host.js', function() {
       assert.equal(obj.config.port, 8008);
       assert.isArray(obj.config.functions);
       assert.equal(obj.config.functions.length, 5);
-      process.kill();
+      child.kill();
       done();
     });
   });
   it('can override the config\'s port when starting a host', function(done) {
-    var process = child_process.spawn(
+    var child = child_process.spawn(
       'node', [pathToBin, pathToTestConfig, '--port', '8080', '--json']
     );
 
-    process.on('error', function(err) {
+    child.on('error', function(err) {
       throw err;
+    });
+
+    child.stderr.on('data', function(data) {
+      throw new Error(data.toString());
     });
 
     var testConfig = require(pathToTestConfig);
 
     assert.equal(testConfig.port, 8008);
 
-    process.stdout.once('data', function(data) {
+    child.stdout.once('data', function(data) {
       var obj = JSON.parse(data.toString());
       assert.equal(obj.version, version);
       assert.equal(obj.type, 'Host');
@@ -216,21 +224,25 @@ describe('bin/js-host.js', function() {
       postToHost(host, 'echo', {data: {echo: 'foo'}}, function(err, res, body) {
         assert.isNull(err);
         assert.equal(body, 'foo');
-        process.kill();
+        child.kill();
         done();
       });
     });
   });
   it('can start a manager process which can start/host/stop hosts', function(done) {
-    var process = child_process.spawn(
+    var child = child_process.spawn(
       'node', [pathToBin, pathToTestConfig, '--manager', '--json']
     );
 
-    process.on('error', function(err) {
+    child.on('error', function(err) {
       throw err;
     });
 
-    process.stdout.once('data', function(data) {
+    child.stderr.once('data', function(data) {
+      throw new Error(data.toString());
+    });
+
+    child.stdout.once('data', function(data) {
       var output = data.toString();
       var obj = JSON.parse(output);
       _.assign(obj.config, {
@@ -258,7 +270,7 @@ describe('bin/js-host.js', function() {
             setTimeout(function() {
               postToHost(host, 'echo', {data: {echo: 'test'}}, function(err, res, body) {
                 assert.instanceOf(err, Error);
-                process.kill();
+                child.kill();
                 done();
               });
             }, 50);
@@ -268,20 +280,24 @@ describe('bin/js-host.js', function() {
     });
   });
   it('can have a manager process automatically exit once the final connection to a host has closed', function(done) {
-    var process = child_process.spawn(
+    var child = child_process.spawn(
       'node', [pathToBin, pathToTestConfig, '--manager', '--json']
     );
 
-    process.on('error', function(err) {
+    child.on('error', function(err) {
       throw err;
     });
 
+    child.stderr.on('data', function(data) {
+      throw new Error(data.toString());
+    });
+
     var hasExited = false;
-    process.once('exit', function() {
+    child.once('exit', function() {
       hasExited = true;
     });
 
-    process.stdout.once('data', function(data) {
+    child.stdout.once('data', function(data) {
       var output = data.toString();
       var config = JSON.parse(output).config;
       config.silent = true;
@@ -334,20 +350,24 @@ describe('bin/js-host.js', function() {
     });
   });
   it('can stop a manager process at the /manager/stop endpoint', function(done) {
-    var process = child_process.spawn(
+    var child = child_process.spawn(
       'node', [pathToBin, pathToTestConfig, '--manager', '--json']
     );
 
-    process.on('error', function(err) {
+    child.on('error', function(err) {
       throw err;
     });
 
+    child.stderr.on('data', function(data) {
+      throw new Error(data.toString());
+    });
+
     var hasExited = false;
-    process.once('exit', function() {
+    child.once('exit', function() {
       hasExited = true;
     });
 
-    process.stdout.once('data', function(data) {
+    child.stdout.once('data', function(data) {
       var output = data.toString();
       var config = JSON.parse(output).config;
       _.assign(config, {
@@ -366,46 +386,46 @@ describe('bin/js-host.js', function() {
     });
   });
   it('throws an error if a config file does not exist', function(done) {
-    var process = child_process.spawn(
+    var child = child_process.spawn(
       'node', [pathToBin, '/missing/file.js']
     );
 
-    process.on('error', function(err) {
+    child.on('error', function(err) {
       throw err;
     });
 
-    process.stderr.once('data', function(data) {
+    child.stderr.once('data', function(data) {
       var output = data.toString();
       if (!IS_NODE_ZERO_TEN) {
         assert.include(output, '/missing/file.js');
       }
-      process.kill();
+      child.kill();
       done();
     });
   });
   it('throws an error if a config file does not export an object', function(done) {
-    var process = child_process.spawn(
+    var child = child_process.spawn(
       'node', [pathToBin, pathToEmptyConfig]
     );
 
-    process.on('error', function(err) {
+    child.on('error', function(err) {
       throw err;
     });
 
-    process.stderr.once('data', function(data) {
+    child.stderr.once('data', function(data) {
       var output = data.toString();
       if (!IS_NODE_ZERO_TEN) {
         assert.include(output, 'Config file does not export an object');
         assert.include(output, pathToEmptyConfig);
       }
-      process.kill();
+      child.kill();
       done();
     });
   });
   it('can write the logger output to a particular file', function(done) {
     var filename = tmp.fileSync().name;
 
-    var process = child_process.spawn(
+    var child = child_process.spawn(
       'node', [pathToBin, pathToLogfileConfig, '--json', '--logfile', filename]
     );
 
@@ -413,15 +433,15 @@ describe('bin/js-host.js', function() {
 
     var initialOutput;
 
-    process.on('error', function(err) {
+    child.on('error', function(err) {
       throw err;
     });
 
-    process.stderr.on('data', function(data) {
+    child.stderr.on('data', function(data) {
       throw new Error(data.toString());
     });
 
-    process.stdout.once('data', function(data) {
+    child.stdout.once('data', function(data) {
       initialOutput = data.toString();
       var host = new Host({
         silent: true,
@@ -436,7 +456,7 @@ describe('bin/js-host.js', function() {
           assert.include(contents, 'POST /function/echo');
           assert.include(contents, 'Calling function "echo"');
           assert.include(contents, 'Function: echo completed');
-          process.kill();
+          child.kill();
           done();
         }, 50);
       });
