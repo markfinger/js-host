@@ -249,6 +249,8 @@ describe('Manager', function() {
   });
   describe('/host/restart endpoint', function() {
     it('should accept a path to a config file, and restart the host', function(done) {
+      this.timeout(5000);
+
       var manager = new Manager({
         silent: true,
         outputOnListen: false
@@ -301,6 +303,8 @@ describe('Manager', function() {
       });
     });
     it('should preserve a host\'s connection list', function(done) {
+      this.timeout(5000);
+
       var manager = new Manager({
         silent: true,
         outputOnListen: false
@@ -342,6 +346,8 @@ describe('Manager', function() {
   });
   describe('/host/connect endpoint', function() {
     it('should accept a path to a config file, and provide a unique connection identifier', function(done) {
+      this.timeout(5000);
+
       var manager = new Manager({
         silent: true,
         outputOnListen: false
