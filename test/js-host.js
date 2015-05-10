@@ -31,6 +31,10 @@ describe('bin/js-host.js', function() {
       'node', [pathToBin, pathToTestConfig]
     );
 
+    process.on('error', function(err) {
+      throw err;
+    });
+
     var host = new Host(
       _.defaults({silent: true}, require('./test_config/config.js'))
     );
@@ -76,6 +80,10 @@ describe('bin/js-host.js', function() {
       'node', [pathToBin, pathToTestConfig]
     );
 
+    process.on('error', function(err) {
+      throw err;
+    });
+
     var host = new Host(
       _.defaults({silent: true}, require('./test_config/config.js'))
     );
@@ -105,6 +113,10 @@ describe('bin/js-host.js', function() {
     var process = child_process.spawn(
       'node', [pathToBin, pathToTestConfig]
     );
+
+    process.on('error', function(err) {
+      throw err;
+    });
 
     var host = new Host(
       _.defaults({silent: true}, require('./test_config/config.js'))
@@ -154,6 +166,10 @@ describe('bin/js-host.js', function() {
       'node', [pathToBin, pathToTestConfig, '--json']
     );
 
+    process.on('error', function(err) {
+      throw err;
+    });
+
     process.stdout.once('data', function(data) {
       var obj = JSON.parse(data.toString());
       assert.equal(obj.version, version);
@@ -170,6 +186,10 @@ describe('bin/js-host.js', function() {
     var process = child_process.spawn(
       'node', [pathToBin, pathToTestConfig, '--port', '8080', '--json']
     );
+
+    process.on('error', function(err) {
+      throw err;
+    });
 
     var testConfig = require(pathToTestConfig);
 
@@ -205,6 +225,10 @@ describe('bin/js-host.js', function() {
     var process = child_process.spawn(
       'node', [pathToBin, pathToTestConfig, '--manager', '--json']
     );
+
+    process.on('error', function(err) {
+      throw err;
+    });
 
     process.stdout.once('data', function(data) {
       var output = data.toString();
@@ -247,6 +271,10 @@ describe('bin/js-host.js', function() {
     var process = child_process.spawn(
       'node', [pathToBin, pathToTestConfig, '--manager', '--json']
     );
+
+    process.on('error', function(err) {
+      throw err;
+    });
 
     var hasExited = false;
     process.once('exit', function() {
@@ -310,6 +338,10 @@ describe('bin/js-host.js', function() {
       'node', [pathToBin, pathToTestConfig, '--manager', '--json']
     );
 
+    process.on('error', function(err) {
+      throw err;
+    });
+
     var hasExited = false;
     process.once('exit', function() {
       hasExited = true;
@@ -338,6 +370,10 @@ describe('bin/js-host.js', function() {
       'node', [pathToBin, '/missing/file.js']
     );
 
+    process.on('error', function(err) {
+      throw err;
+    });
+
     process.stderr.once('data', function(data) {
       var output = data.toString();
       if (!IS_NODE_ZERO_TEN) {
@@ -351,6 +387,10 @@ describe('bin/js-host.js', function() {
     var process = child_process.spawn(
       'node', [pathToBin, pathToEmptyConfig]
     );
+
+    process.on('error', function(err) {
+      throw err;
+    });
 
     process.stderr.once('data', function(data) {
       var output = data.toString();
@@ -372,6 +412,10 @@ describe('bin/js-host.js', function() {
     var config = require(pathToLogfileConfig);
 
     var initialOutput;
+
+    process.on('error', function(err) {
+      throw err;
+    });
 
     process.stderr.on('data', function(data) {
       throw new Error(data.toString());
