@@ -209,12 +209,16 @@ describe('bin/js-host.js', function() {
     process.stdout.once('data', function(data) {
       var output = data.toString();
       var obj = JSON.parse(output);
-      obj.config.functions = null;
+      _.assign(obj.config, {
+        functions: null,
+        silent: true
+      });
       var manager = new Manager(obj.config);
       postToManager(manager, '/host/start', {config: pathToTestConfig}, function(err, res, body) {
         assert.isNull(err);
         assert.notEqual(body, output);
         var hostConfig = JSON.parse(body.output).config;
+        hostConfig.silent = true;
         assert.equal(hostConfig.address, '127.0.0.1');
         assert.isNumber(hostConfig.port);
         var host = new Host(_.omit(hostConfig, 'functions'));
@@ -223,7 +227,10 @@ describe('bin/js-host.js', function() {
           assert.equal(body, 'test');
           postToManager(manager, '/host/stop', {config: pathToTestConfig}, function(err, res, body) {
             assert.isNull(err);
-            assert.deepEqual(JSON.parse(body.output).config, hostConfig);
+            assert.deepEqual(
+              JSON.parse(body.output).config,
+              _.omit(hostConfig, 'silent')
+            );
             setTimeout(function() {
               postToHost(host, 'echo', {data: {echo: 'test'}}, function(err, res, body) {
                 assert.instanceOf(err, Error);
@@ -249,11 +256,13 @@ describe('bin/js-host.js', function() {
     process.stdout.once('data', function(data) {
       var output = data.toString();
       var config = JSON.parse(output).config;
+      config.silent = true;
       var manager = new Manager(config);
       postToManager(manager, '/host/start', {config: pathToTestConfig}, function(err, res, body) {
         assert.isNull(err);
         assert.notEqual(body, output);
         var hostConfig = JSON.parse(body.output).config;
+        hostConfig.silent = true;
         assert.equal(hostConfig.address, '127.0.0.1');
         assert.isNumber(hostConfig.port);
         var host = new Host(_.omit(hostConfig, 'functions'));
@@ -309,7 +318,10 @@ describe('bin/js-host.js', function() {
     process.stdout.once('data', function(data) {
       var output = data.toString();
       var config = JSON.parse(output).config;
-      config.functions = null;
+      _.assign(config, {
+        functions: null,
+        silent: true
+      });
       var manager = new Manager(config);
       postToManager(manager, '/manager/stop', function(err, res, body) {
         assert.isNull(err);
