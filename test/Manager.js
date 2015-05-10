@@ -118,6 +118,8 @@ describe('Manager', function() {
       });
     });
     it('can run multiple hosts at once', function(done) {
+      this.timeout(5000);
+
       var manager = new Manager({
         silent: true
       });
