@@ -128,8 +128,10 @@ describe('bin/js-host.js', function() {
       stderr += data.toString();
     });
 
+    var hasCompleted = false;
     var hasExited = false;
     child.on('exit', function() {
+      if (hasCompleted) return done();
       hasExited = true;
     });
 
@@ -139,9 +141,9 @@ describe('bin/js-host.js', function() {
       postToHost(host, 'error_async', function(err, res, body) {
         assert.instanceOf(err, Error);
         setTimeout(function() {
-          assert.isTrue(hasExited);
           assert.include(stderr, 'Error: Error function');
-          done();
+          if (hasExited) return done();
+          hasCompleted = true;
         }, 10);
       });
     });
