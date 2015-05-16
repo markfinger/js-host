@@ -75,7 +75,7 @@ node_modules/.bin/js-host host.config.js
 
 The following arguments are accepted:
 
-| &nbsp; | Alias | Description |
+| &nbsp;&nbsp; | Alias | Description |
 | :----- | :---- | :---------- |
 | -c | --config | Read in the config file and output its generated config as JSON |
 | -j | --json | Once the process has started, output its generated config as JSON |
