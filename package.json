@@ -1,6 +1,6 @@
 {
   "name": "js-host",
-  "version": "0.11.5",
+  "version": "0.11.6",
   "description": "Configurable JavaScript host",
   "author": "Mark Finger <markfinger@gmail.com>",
   "license": "MIT",
