@@ -466,8 +466,8 @@ describe('bin/js-host.js', function() {
         setTimeout(function() {
           var contents = fs.readFileSync(filename).toString();
           assert.include(contents, 'POST /function/echo');
-          assert.include(contents, 'Calling function "echo"');
-          assert.include(contents, 'Function: echo completed');
+          assert.include(contents, 'calling function echo');
+          assert.include(contents, 'function echo completed');
           child.kill();
           done();
         }, 50);
