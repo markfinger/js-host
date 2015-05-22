@@ -269,5 +269,23 @@ describe('Host', function() {
       });
       assert.strictEqual(host.logger, logger);
     });
+    it('should be accessible in functions', function(done) {
+      var host = new Host({
+        silent: true,
+        outputOnListen: false,
+        functions: {
+          test: function(data, cb) {
+            assert.strictEqual(this.host, host);
+            assert.strictEqual(this.host.logger, host.logger);
+            cb(null, true);
+            host.stopListening();
+            done();
+          }
+        }
+      });
+      host.listen(function() {
+        postToHost(host, 'test', function(err, res, body) {});
+      });
+    });
   });
 });
