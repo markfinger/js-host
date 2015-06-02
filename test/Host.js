@@ -96,7 +96,7 @@ describe('Host', function() {
     });
   });
   describe('#listen()', function() {
-    it('can start the listenerServer', function(done) {
+    it('can start the server', function(done) {
       var host = new Host({
         outputOnListen: false,
         silent: true
@@ -107,29 +107,22 @@ describe('Host', function() {
       });
     });
   });
-  describe('#listenerServer', function() {
-    it('is set when listening', function(done) {
+  describe('#server', function() {
+    it('is set during creation', function() {
       var host = new Host({
         outputOnListen: false,
         silent: true
       });
-      assert.isNull(host.listenerServer);
-      host.listen(function() {
-        assert.isNotNull(host.listenerServer);
-        host.stopListening();
-        done();
-      });
+      assert.isNotNull(host.server);
     });
-    it('is unset after listening has stopped', function(done) {
+    it('can be stopped', function(done) {
       var host = new Host({
         outputOnListen: false,
         silent: true
       });
-      assert.isNull(host.listenerServer);
+      assert.isNotNull(host.server);
       host.listen(function() {
-        assert.isNotNull(host.listenerServer);
         host.stopListening();
-        assert.isNull(host.listenerServer);
         done();
       });
     });
@@ -286,6 +279,23 @@ describe('Host', function() {
       host.listen(function() {
         postToHost(host, 'test', function(err, res, body) {});
       });
+    });
+  });
+  describe('#extendHost', function() {
+    it('should be able to extend the host before listening', function() {
+      var _host;
+      var host = new Host({
+        extendHost: function(__host) {
+          _host = __host;
+          _host.foo = 'test';
+          _host.bar = 10;
+        }
+      });
+
+      assert.strictEqual(_host, host);
+
+      assert.equal(host.foo, 'test');
+      assert.equal(host.foo, 'test');
     });
   });
 });
